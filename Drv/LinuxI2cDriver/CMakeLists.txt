@@ -5,36 +5,28 @@
 # MOD_DEPS: (optional) module dependencies
 #
 ####
-
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 	set(SOURCE_FILES
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentAi.xml"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImplCommon.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImplStub.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentAi.xml"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImplCommon.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImplStub.cpp"
 	)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(SOURCE_FILES
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentAi.xml"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImplCommon.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImpl.cpp"
-	)
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL "CygWin")
-	set(SOURCE_FILES
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentAi.xml"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImplCommon.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImpl.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentAi.xml"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImplCommon.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImpl.cpp"
 	)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "arm-linux-gnueabihf")
 	set(SOURCE_FILES
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentAi.xml"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImplCommon.cpp"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImpl.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentAi.xml"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImplCommon.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImpl.cpp"
 	)
 else()
 	set(SOURCE_FILES
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentAi.xml"
-		"${CMAKE_CURRENT_LIST_DIR}/LinuxSerialDriverComponentImplCommon.cpp"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentAi.xml"
+		"${CMAKE_CURRENT_LIST_DIR}/LinuxI2cDriverComponentImplCommon.cpp"
 	)
 endif()
 

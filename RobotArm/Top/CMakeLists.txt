@@ -7,7 +7,7 @@
 # Note: using PROJECT_NAME as EXECUTABLE_NAME
 ####
 set(SOURCE_FILES
-	"${CMAKE_CURRENT_LIST_DIR}/RPITopologyAppAi.xml"
+	"${CMAKE_CURRENT_LIST_DIR}/RobotArmTopologyAppAi.xml"
 	"${CMAKE_CURRENT_LIST_DIR}/Topology.cpp"  
 	"${CMAKE_CURRENT_LIST_DIR}/Main.cpp"  
 )
