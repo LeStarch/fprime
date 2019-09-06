@@ -13,6 +13,7 @@ import fprime_gds.common.utils.config_manager
 
 # Get dictionary from environment
 DICTIONARY = os.environ.get("DICTIONARY", None)
+FSW_PORT = int(os.environ.get("FSW_PORT", None), 0)
 
 # Gds config setup
 GDS_CONFIG = fprime_gds.common.utils.config_manager.ConfigManager()

@@ -18,6 +18,10 @@ import fprime_gds.flask.json
 # Import GDS layer items
 import fprime_gds.common.pipeline.standard
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.WARN)
+
 # Flask global objects
 app = flask.Flask(__name__, static_url_path="")
 # Configuration loading
@@ -33,7 +37,7 @@ api = flask_restful.Api(app)
 # Middleware to python data pipeline
 pipeline = fprime_gds.common.pipeline.standard.StandardPipeline()
 pipeline.setup(app.config["GDS_CONFIG"], app.config["DICTIONARY"])
-pipeline.connect("127.0.0.1", 50000)
+pipeline.connect("0.0.0.0", app.config["FSW_PORT"])
 
 # Application routes
 api.add_resource(fprime_gds.flask.commands.CommandDictionary, "/dictionary/commands",

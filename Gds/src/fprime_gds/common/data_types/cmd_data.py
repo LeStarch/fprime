@@ -134,7 +134,7 @@ class CmdData(sys_data.SysData):
             # used to fill in a format string. Convert them to values that can be
             arg_val_list = [arg_obj.val for arg_obj in self.args]
 
-            arg_str = " ".join(arg_val_list)
+            arg_str = " ".join([str(item) for item in arg_val_list])
 
         if verbose and csv:
             return ("%s,%s,%s,%d,%s"%(time_str, raw_time_str, name, self.id, arg_str))
