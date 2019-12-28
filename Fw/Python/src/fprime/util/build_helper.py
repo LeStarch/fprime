@@ -90,7 +90,7 @@ def validate(parsed):
         # Generation validation
         elif parsed.build_dir is None:
             build_inst_name = fprime.fbuild.cmake.CMakeHandler.CMAKE_DEFAULT_BUILD_NAME.format(parsed.platform)
-            parsed.build_dir = os.path.join(os.getcwd(), build_inst_name)
+            parsed.build_dir = os.path.join(parsed.path, build_inst_name)
     except fprime.fbuild.cmake.CMakeProjectException as exc:
         print("[ERROR] {}".format(exc))
         sys.exit(1)
@@ -130,7 +130,7 @@ def validate(parsed):
             toolchains = list(filter(os.path.exists, toolchains_paths))
             if not toolchains:
                 print("[ERROR] Toolchain file {} does not exist at any of {}"
-                      .format(toolchains + ".cmake", ", ".join(list(toolchains_paths))))
+                      .format(toolchain + ".cmake", ", ".join(list(toolchains_paths))))
                 sys.exit(-1)
             print("[INFO] Using toolchain file {} for platform {}".format(toolchains[0], parsed.platform))
             cmake_args.update({"CMAKE_TOOLCHAIN_FILE": toolchains[0]})
