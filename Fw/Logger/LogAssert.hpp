@@ -11,7 +11,8 @@
 #define LOGGER_LOGASSERT_HPP_
 
 #include <Fw/Types/Assert.hpp>
-
+ 
+#if FW_ASSERT_LEVEL != FW_NO_ASSERT
 namespace Fw {
 
     class LogAssertHook: public Fw::AssertHook {
@@ -34,5 +35,5 @@ namespace Fw {
     };
 
 }
-
+#endif
 #endif /* VXWORKSLOGASSERT_HPP_ */

@@ -2,7 +2,7 @@
 #include <Fw/Types/Assert.hpp>
 #include <assert.h>
 #include <stdio.h>
-
+#include <Os/Log.hpp>
 #ifdef TGT_OS_TYPE_VXWORKS
 #include <taskLib.h>
 #endif

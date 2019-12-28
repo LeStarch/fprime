@@ -5,4 +5,4 @@
 #
 #
 
-SRC = SerialReadPortAi.xml SerialWritePortAi.xml
+SRC = SerialReadPortAi.xml SerialWritePortAi.xml SerialPollPortAi.xml

@@ -130,6 +130,23 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "arm-linux-gnueabihf")
       "${CMAKE_CURRENT_LIST_DIR}/ValidatedFile.cpp"
       "${CMAKE_CURRENT_LIST_DIR}/FileCommon.cpp"
    )
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
+    set(SOURCE_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/Baremetal/Task.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/TaskCommon.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/TaskString.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Baremetal/File.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Baremetal/FileSystem.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Baremetal/IntervalTimer.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Baremetal/Mutex.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Baremetal/Queue.cpp"
+	    "${CMAKE_CURRENT_LIST_DIR}/QueueCommon.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/QueueString.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Pthreads/BufferQueueCommon.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Pthreads/FIFOBufferQueue.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Arduino/IntervalTimer.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/Arduino/StreamLog.cpp"
+    )
 else()
   # Default Linux
   set(SOURCE_FILES
@@ -174,11 +191,17 @@ if (BAREMETAL_SCHEDULER)
     list(APPEND SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/Baremetal/Task.cpp")
 endif()
 register_fprime_module()
-
+# Teensyduino additions
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
+    get_module_name(${CMAKE_CURRENT_LIST_DIR})
+    add_arduino_dependency("${MODULE_NAME}")
+endif()
 # Add stubs directory for testing builds
 if (CMAKE_BUILD_TYPE STREQUAL "TESTING")
     add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Stubs/")
 endif()
+
+
 
 ### UTS ### Note: 3 separate UTs registered here.
 set(UT_SOURCE_FILES

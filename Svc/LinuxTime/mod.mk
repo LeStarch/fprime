@@ -20,6 +20,8 @@ SRC_DARWIN = DarwinTimeImpl.cpp
 
 SRC_RASPIAN = LinuxTimeImpl.cpp
 
+SRC_TEENSY32 = ArduinoTimeImpl.cpp
+
 HDR = LinuxTimeImpl.hpp
 
 SUBDIRS = test

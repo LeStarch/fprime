@@ -1,0 +1,3 @@
+[submodule "examples/Arduino/RFM69"]
+	path = examples/ArduinoGpsTracker/RFM69
+	url = https://github.com/LowPowerLab/RFM69.git

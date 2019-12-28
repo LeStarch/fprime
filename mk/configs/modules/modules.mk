@@ -20,6 +20,20 @@ FW_MODULES := \
 	Fw/Types \
         Fw/Logger
 
+FW_MINIMAL_MODULES := \
+	Fw/Cfg \
+	Fw/Buffer \
+	Fw/Comp \
+	Fw/Obj \
+	Fw/Port \
+	Fw/Cmd \
+	Fw/Tlm \
+	Fw/Prm \
+	Fw/Log \
+	Fw/Time \
+	Fw/Com \
+	Fw/Types
+
 FW_GTEST_MODULES := \
 	Fw/SerializableFile/test/TestSerializable \
 	Fw/FilePacket/GTest \
@@ -38,6 +52,36 @@ UTILS_MODULES := \
 	Utils/Hash \
 	Utils/Types
         
+SVC_MINIMAL_MODULES := \
+	Svc/BufferManager \
+	Svc/CmdDispatcher \
+	Svc/CmdSequencer \
+	Svc/Seq \
+	Svc/GndIf \
+	Svc/ActiveRateGroup \
+	Svc/RateGroupDriver \
+	Svc/Sched \
+	Svc/ComLogger \
+	Svc/TlmChan \
+	Svc/PassiveTextLogger \
+	Svc/PassiveConsoleTextLogger \
+	Svc/Time \
+	Svc/Cycle \
+	Svc/LinuxTime \
+	Svc/LinuxTimer \
+	Svc/ActiveLogger \
+	Svc/Fatal \
+	Svc/PolyIf \
+	Svc/PolyDb \
+	Svc/PrmDb \
+	Svc/Ping \
+	Svc/Health \
+	Svc/WatchDog \
+    Svc/AssertFatalAdapter \
+    Svc/FatalHandler \
+	Svc/FileManager \
+        Svc/GroundInterface
+
 SVC_MODULES := \
 	Svc/BufferAccumulator \
 	Svc/BufferLogger \
@@ -50,8 +94,6 @@ SVC_MODULES := \
 	Svc/RateGroupDriver \
 	Svc/Sched \
 	Svc/ComLogger \
-	Svc/SocketGndIf \
-	Svc/BuffGndSockIf \
 	Svc/TlmChan \
 	Svc/PassiveTextLogger \
 	Svc/PassiveConsoleTextLogger \
@@ -76,6 +118,10 @@ SVC_MODULES := \
 	Svc/UdpReceiver \
 	Svc/GroundInterface
 	
+
+
+#	Svc/SocketGndIf \
+#	Svc/BuffGndSockIf \
 
 DEMO_DRV_MODULES := \
 	Drv/DataTypes \
@@ -113,6 +159,7 @@ Ref_MODULES := \
   	\
   	$(UTILS_MODULES)
 
+<<<<<<< HEAD
 GPS_MODULES := \
 	GpsApp/Top \
 	GpsApp/Gps
@@ -133,6 +180,24 @@ GpsApp_MODULES := \
   	\
   	$(UTILS_MODULES)
 	
+=======
+ARDUINO_REF_MODULES := \
+        examples/Arduino/Top \
+        examples/Arduino/HardwareRateDriver \
+        examples/Arduino/LedBlinker \
+        examples/Arduino/Gps \
+        examples/Arduino/SerialDriver \
+        examples/Arduino/RadioWrapper
+
+Arduino_MODULES := \
+        $(ARDUINO_REF_MODULES) \
+	$(SVC_MINIMAL_MODULES) \
+        $(FW_MINIMAL_MODULES) \
+	$(OS_MODULES) \
+        $(UTILS_MODULES) \
+	$(CFDP_MODULES)
+
+>>>>>>> e91e538d3397036995b96e8cb977ede60cc6cd1e
 ACDEVTEST_MODULES := \
 	Autocoders/Python/test/active_tester \
 	Autocoders/Python/test/app1 \
@@ -232,5 +297,5 @@ OTHER_MODULES := \
 
 # List deployments
 
-DEPLOYMENTS := Ref GpsApp acdev RPI
+DEPLOYMENTS := Ref GpsApp Arduino acdev RPI
 

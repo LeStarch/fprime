@@ -40,7 +40,7 @@ HDR = \
 	MemAllocator.hpp \
 	MallocAllocator.hpp
 
-#	FwStructSerializable.hpp
-	
+SRC_TEENSY32 = Generic/GenericLogAssert.cpp
+
 SUBDIRS = test
 

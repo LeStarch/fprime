@@ -16,6 +16,7 @@ set(MOD_DEPS
   Fw/Types
   Fw/Obj
   Fw/Port
+  Os
 )
 # For shared libraries, Os must exist in the module list
 if (BUILD_SHARED_LIBS)

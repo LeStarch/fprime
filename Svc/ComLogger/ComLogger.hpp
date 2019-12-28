@@ -16,7 +16,8 @@
 #include <limits.h>
 #include <stdio.h>
 #include <cstdarg>
-
+#define NAME_MAX 90
+#define PATH_MAX 120
 namespace Svc {
 
   class ComLogger :
