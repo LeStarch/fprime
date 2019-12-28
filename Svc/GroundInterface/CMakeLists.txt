@@ -12,10 +12,17 @@ set(SOURCE_FILES
 )
 set(MOD_DEPS "Utils/Types")
 register_fprime_module()
-### UTs ###
-##set(UT_SOURCE_FILES
-##  "${FPRIME_CORE_DIR}/Svc/ActiveRateGroup/ActiveRateGroupComponentAi.xml"
-##  "${CMAKE_CURRENT_LIST_DIR}/test/ut/ActiveRateGroupTester.cpp"
-##  "${CMAKE_CURRENT_LIST_DIR}/test/ut/ActiveRateGroupImplTester.cpp"
-##)
-##register_fprime_ut()
+
+# Rules based unit testing
+set(UT_MOD_DEPS
+        STest
+        Fw/Types)
+
+set(UT_SOURCE_FILES
+        "${CMAKE_CURRENT_LIST_DIR}/GroundInterfaceComponentAi.xml"
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/Tester.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/TestMain.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/GroundInterfaceRules.cpp"
+        )
+# STest Includes for this UT
+register_fprime_ut()
