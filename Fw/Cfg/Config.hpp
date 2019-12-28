@@ -6,15 +6,8 @@
  * \copyright
  * Copyright 2009-2015, by the California Institute of Technology.
  * ALL RIGHTS RESERVED.  United States Government Sponsorship
- * acknowledged. Any commercial use must be negotiated with the Office
- * of Technology Transfer at the California Institute of Technology.
+ * acknowledged.
  * <br /><br />
- * This software may be subject to U.S. export control laws and
- * regulations.  By accepting this document, the user agrees to comply
- * with all U.S. export laws and regulations.  User has the
- * responsibility to obtain export licenses, or other export authority
- * as may be required before exporting such information to foreign
- * countries or providing access to foreign persons.
  */
 #ifndef _FW_CONFIG_HPP_
 #define _FW_CONFIG_HPP_
@@ -117,6 +110,11 @@
 #ifndef FW_QUEUE_REGISTRATION
 #define FW_QUEUE_REGISTRATION               1   //!< Indicates whether or not queue registration is used
 #endif
+
+#ifndef FW_BAREMETAL_SCHEDULER
+#define FW_BAREMETAL_SCHEDULER             0   //!< Indicates whether or not a baremetal scheduler should be used. Alternatively the Os scheduler is used.
+#endif
+
 // Port Facilities
 
 // This allows tracing calls through ports for debugging
@@ -161,7 +159,7 @@
 
 // Define max length of assert string
 #ifndef FW_ASSERT_TEXT_SIZE
-#define FW_ASSERT_TEXT_SIZE                 80  //!< Size of string used to store assert description
+#define FW_ASSERT_TEXT_SIZE                 120  //!< Size of string used to store assert description
 #endif
 
 // Adjust various configuration parameters in the architecture. Some of the above enables may disable some of the values
@@ -169,7 +167,7 @@
 // The size of the object name stored in the object base class. Larger names will be truncated.
 #if FW_OBJECT_NAMES
  #ifndef FW_OBJ_NAME_MAX_SIZE
- #define FW_OBJ_NAME_MAX_SIZE                80  //!< Size of object name (if object names enabled)
+ #define FW_OBJ_NAME_MAX_SIZE                80  //!< Size of object name (if object names enabled). AC Limits to 80, truncation occurs above 80.
  #endif
 #endif
 
@@ -242,7 +240,7 @@
 
 // Specifies the maximum size of a string in a log event
 #ifndef FW_LOG_STRING_MAX_SIZE
-#define FW_LOG_STRING_MAX_SIZE           80   //!< Max size of log string parameter type
+#define FW_LOG_STRING_MAX_SIZE           100   //!< Max size of log string parameter type
 #endif
 
 // Specifies the size of the buffer that contains the serialized telemetry value.

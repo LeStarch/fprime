@@ -9,8 +9,8 @@
 
 ======================================================================-->
 
-<telemetry telemetry_base="$SignalGenIdBase">
-  <channel id="0" name="SignalGen_Output" data_type="F32" abbrev="T001-300">
+<telemetry>
+  <channel id="0" name="SignalGen_Output" data_type="F32" format_string = "%2.4f" abbrev="T001-300">
     <comment>SignalGen Output</comment>
   </channel>
 </telemetry>

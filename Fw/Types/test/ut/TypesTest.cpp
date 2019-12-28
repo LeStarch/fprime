@@ -15,7 +15,7 @@
 
 #include <iostream>
 
-#define DEBUG_VERBOSE 1
+#define DEBUG_VERBOSE 0
 
 #include <gtest/gtest.h>
 
@@ -235,6 +235,41 @@ TEST(SerializationTest,Serialization1) {
     printf("Val: in: %s out: %s stat1: %d stat2: %d\n",
             boolt1 ? "TRUE" : "FALSE", boolt2 ? "TRUE" : "FALSE", stat1, stat2);
 
+    printf("Skip deserialization Tests\n");
+#endif
+
+// Test skipping:
+
+    buff.resetSer();
+    stat1 = buff.serialize(u32t1);
+    ASSERT_EQ(Fw::FW_SERIALIZE_OK,stat1);
+    stat2 = buff.serialize(u32t2);
+    ASSERT_EQ(Fw::FW_SERIALIZE_OK,stat2);
+
+    // should fail:
+    stat1 = buff.deserializeSkip(10);
+    ASSERT_EQ(Fw::FW_DESERIALIZE_SIZE_MISMATCH,stat1);
+
+    // skip everything:
+    stat1 = buff.deserializeSkip(4);
+    ASSERT_EQ(Fw::FW_SERIALIZE_OK,stat1);
+    stat2 = buff.deserializeSkip(4);
+    ASSERT_EQ(Fw::FW_SERIALIZE_OK,stat2);
+
+    // should fail:
+    stat1 = buff.deserializeSkip(4);
+    ASSERT_EQ(Fw::FW_DESERIALIZE_BUFFER_EMPTY,stat1);
+
+    // skip half/read half:
+    buff.resetDeser();
+    stat1 = buff.deserializeSkip(4);
+    ASSERT_EQ(Fw::FW_SERIALIZE_OK,stat1);
+    U32 u32val;
+    stat2 = buff.deserialize(u32val);
+    ASSERT_EQ(Fw::FW_SERIALIZE_OK,stat2);
+    ASSERT_EQ(u32t2,u32val);
+
+#if DEBUG_VERBOSE
     printf("\nDeserialization Tests\n");
 #endif
 
@@ -512,8 +547,8 @@ void classCopyTest(I32 iterations) {
     timer.start();
 
     for (I32 iter = 0; iter < iterations; iter++) {
-        memcpy(buff, &ms, sizeof(ms));
-        memcpy(&ms, buff, sizeof(buff));
+        memcpy(buff, reinterpret_cast<void*>(&ms), sizeof(ms));
+        memcpy(reinterpret_cast<void*>(&ms), buff, sizeof(buff));
     }
 
     timer.stop();
@@ -526,8 +561,8 @@ void classCopyTest(I32 iterations) {
 }
 
 void printSizes(void) {
-    printf("Sizeof TestStruct: %d\n", sizeof(TestStruct));
-    printf("Sizeof MySerializable: %d\n", sizeof(MySerializable));
+    printf("Sizeof TestStruct: %lu\n", sizeof(TestStruct));
+    printf("Sizeof MySerializable: %lu\n", sizeof(MySerializable));
 }
 
 void AssertTest(void) {
