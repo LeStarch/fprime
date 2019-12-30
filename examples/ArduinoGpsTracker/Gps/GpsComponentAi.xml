@@ -10,9 +10,9 @@
     <import_port_type>Fw/Tlm/TlmPortAi.xml</import_port_type>
     <import_port_type>Fw/Cmd/CmdResponsePortAi.xml</import_port_type>
     <import_port_type>Fw/Buffer/BufferSendPortAi.xml</import_port_type>
-    <import_dictionary>examples/Arduino/Gps/Commands.xml</import_dictionary>
-    <import_dictionary>examples/Arduino/Gps/Telemetry.xml</import_dictionary>
-    <import_dictionary>examples/Arduino/Gps/Events.xml</import_dictionary>
+    <import_dictionary>examples/ArduinoGpsTracker/Gps/Commands.xml</import_dictionary>
+    <import_dictionary>examples/ArduinoGpsTracker/Gps/Telemetry.xml</import_dictionary>
+    <import_dictionary>examples/ArduinoGpsTracker/Gps/Events.xml</import_dictionary>
     <ports>
     
 
