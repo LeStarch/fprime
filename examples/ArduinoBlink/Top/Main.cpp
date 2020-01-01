@@ -10,7 +10,6 @@
 
 // Global handlers for this Topology
 Fw::LogAssertHook assert;
-Os::Log logger;
 
 #define STARTUP_DELAY_MS 2000
 
@@ -25,7 +24,6 @@ int main(int argc, char* argv[]) {
     delay(STARTUP_DELAY_MS);
     // Setup log handler
     Os::setArduinoStreamLogHandler(&Serial);
-    Fw::Logger::registerLogger(&logger);
 #else
     // Set serial port
     FW_ASSERT(argc <= 2);

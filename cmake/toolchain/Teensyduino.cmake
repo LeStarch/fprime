@@ -20,6 +20,8 @@ SET(TEENSY_VERSION "teensy32" CACHE STRING "Version of TEENSY to use")
 string(REGEX MATCH "teensy[0-9]" TEENSY_CORE_DIR "${TEENSY_VERSION}")
 include("${CMAKE_CURRENT_LIST_DIR}/ArduinoSupport/${TEENSY_VERSION}.cmake")
 set(TEENSY_SRC_DIR "${ARDUINO_SDK_PATH}/hardware/teensy/avr/cores/${TEENSY_CORE_DIR}" CACHE PATH "Teensy SRC")
+set(TEENSY_LIB_DIR "${ARDUINO_SDK_PATH}/hardware/teensy/avr/libraries/" CACHE PATH "Teensy Libraries SRC")
+set(TEENSY_SUPPORTED_LIBS "SPI" "Wire")
 
 message(STATUS "Arduino SDK path:  ${ARDUINO_SDK_PATH}")
 message(STATUS "Teensy Version:    ${TEENSY_VERSION}; ${TEENSY_CORE_DIR}")
@@ -71,6 +73,10 @@ set(CMAKE_C_COMPILE_OBJECT   "${CMAKE_C_COMPILER}   -c <SOURCE> -o <OBJECT> <FLA
 
 # Glob up all the files for the Arduino lib build
 file(GLOB ARDUINO_SRC "${TEENSY_SRC_DIR}/*.cpp" "${TEENSY_SRC_DIR}/*.c" "${TEENSY_SRC_DIR}/*.S")
+foreach (TSLIB ${TEENSY_SUPPORTED_LIBS})
+    file(GLOB ARDUINO_LIB "${TEENSY_LIB_DIR}/${TSLIB}/*.cpp" "${TEENSY_SRC_DIR}/${TSLIB}/*.c" "${TEENSY_SRC_DIR}/${TSLIB}/*.S")
+    LIST(APPEND ARDUINO_SRC ${ARDUINO_LIB})
+endforeach()
 if (NOT ARDUINO_SRC STREQUAL "")
     set(TEENSY_ARDUINO_SRC ${ARDUINO_SRC} CACHE STRING "Teensy's Arduino Sources")
 endif()
@@ -88,6 +94,10 @@ function(add_arduino_dependency target)
         add_library("teensycore" ${ARDUINO_SRC} ${TEENSY_SHIM_SOURCES})
         target_link_libraries("teensycore" "m" "stdc++" ${TEENSY_LIBS})
         target_include_directories("teensycore" PUBLIC ${TEENSY_SRC_DIR})
+        # Loop through the libraries
+        foreach (TSLIB ${TEENSY_SUPPORTED_LIBS})
+            target_include_directories("teensycore" PUBLIC "${TEENSY_LIB_DIR}/${TSLIB}")
+        endforeach()
     endif()
 
 
@@ -95,6 +105,11 @@ function(add_arduino_dependency target)
     add_dependencies(${target} "teensycore")
     target_link_libraries(${target} "teensycore" "m" "stdc++")
     target_include_directories(${target} PUBLIC ${TEENSY_SRC_DIR})
+    # Loop through the libraries
+    foreach (TSLIB ${TEENSY_SUPPORTED_LIBS})
+         target_include_directories(${target} PUBLIC "${TEENSY_LIB_DIR}/${TSLIB}")
+    endforeach()
+
     # Check if executable
     get_target_property(target_type ${target} TYPE)
     if (target_type STREQUAL "EXECUTABLE")

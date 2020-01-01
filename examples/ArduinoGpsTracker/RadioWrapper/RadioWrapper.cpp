@@ -5,7 +5,7 @@
 // ====================================================================== 
 
 
-#include <examples/Arduino/RadioWrapper/RadioWrapper.hpp>
+#include <examples/ArduinoGpsTracker/RadioWrapper/RadioWrapper.hpp>
 #include "Fw/Types/BasicTypes.hpp"
 
 namespace Arduino {

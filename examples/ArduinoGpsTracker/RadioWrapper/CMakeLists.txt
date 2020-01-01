@@ -16,9 +16,10 @@ if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
     list(APPEND SOURCE_FILES 
         "${CMAKE_CURRENT_LIST_DIR}/RadioWrapperArduino.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/RFM69.cpp")
+	"${CMAKE_CURRENT_LIST_DIR}/../RFM69/RFM69.cpp")
 endif()
 register_fprime_module()
+target_include_directories("examples_ArduinoGpsTracker_RadioWrapper" PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../RFM69")
 # Add Teensyduino dependency
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
     get_module_name(${CMAKE_CURRENT_LIST_DIR})

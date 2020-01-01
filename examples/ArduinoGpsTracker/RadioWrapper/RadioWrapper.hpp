@@ -7,8 +7,8 @@
 #ifndef RadioWrapper_HPP
 #define RadioWrapper_HPP
 
-#include "examples/Arduino/RadioWrapper/RadioWrapperComponentAc.hpp"
-#include "examples/Arduino/RFM69/RFM69.h"
+#include "examples/ArduinoGpsTracker/RadioWrapper/RadioWrapperComponentAc.hpp"
+#include "examples/ArduinoGpsTracker/RFM69/RFM69.h"
 
 #define NODEID_GROUND 0
 #define NODEID_REMOTE 1

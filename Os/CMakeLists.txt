@@ -140,11 +140,12 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
         "${CMAKE_CURRENT_LIST_DIR}/Baremetal/IntervalTimer.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Baremetal/Mutex.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Baremetal/Queue.cpp"
-	    "${CMAKE_CURRENT_LIST_DIR}/QueueCommon.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/QueueCommon.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/QueueString.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Pthreads/BufferQueueCommon.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Pthreads/FIFOBufferQueue.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Arduino/IntervalTimer.cpp"
+	"${CMAKE_CURRENT_LIST_DIR}/LogDefault.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Arduino/StreamLog.cpp"
     )
 else()

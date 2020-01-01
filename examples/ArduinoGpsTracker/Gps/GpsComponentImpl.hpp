@@ -11,7 +11,7 @@
 #ifndef Gps_HPP
 #define Gps_HPP
 #include "Utils/Types/CircularBuffer.hpp"
-#include "examples/Arduino/Gps/GpsComponentAc.hpp"
+#include "examples/ArduinoGpsTracker/Gps/GpsComponentAc.hpp"
 
 #define GP_HEADER_LENGTH 5
 #define GPGGA_LENGTH 82

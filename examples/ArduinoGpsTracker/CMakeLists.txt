@@ -18,11 +18,13 @@
 # This contains the basic project information. Specifically, a cmake version and
 # project definition.
 ##
-project(ArduinoGpsTracker C CXX)
+project(examples_ArduinoGpsTracker C CXX ASM)
 cmake_minimum_required(VERSION 3.5)
 set(FPRIME_FRAMEWORK_PATH "${CMAKE_CURRENT_LIST_DIR}/../.." CACHE PATH "Location of F prime framework" FORCE)
 set(FPRIME_PROJECT_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." CACHE PATH "Root path of F prime project" FORCE)
+set(FPRIME_DEFAULT_TOOLCHAIN_NAME "Teensyduino"  CACHE STRING "Default toolchain, used in generation" FORCE)
 
+set(BAREMETAL_SCHEDULER CACHE BOOL ON "Uses the baremtal scheduler")
 ##
 # Section 2: F prime Core
 #
@@ -55,6 +57,7 @@ add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/SerialDriver/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/HardwareRateDriver/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Gps/")
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/RadioWrapper/")
+add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/LedBlinker/")
 
 # Add Topology subdirectory
 add_fprime_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Top/")

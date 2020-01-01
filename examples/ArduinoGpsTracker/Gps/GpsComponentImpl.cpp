@@ -8,7 +8,7 @@
 // Copyright 2018, lestarch.
 // ====================================================================== 
 
-#include <examples/Arduino/Gps/GpsComponentImpl.hpp>
+#include <examples/ArduinoGpsTracker/Gps/GpsComponentImpl.hpp>
 #include "Fw/Types/BasicTypes.hpp"
 #include "Os/Log.hpp"
 #include <cstdlib>
