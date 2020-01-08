@@ -14,7 +14,11 @@ set(SOURCE_FILES
 # Note: supply non-explicit dependencies here
 set(MOD_DEPS
 	Svc/PassiveConsoleTextLogger
-	Svc/SocketGndIf
 	Svc/LinuxTime
+	Svc/PrmDb
+	Svc/FileUplink
+	Svc/FileDownlink
+	Svc/BufferManager
+	Svc/Health
 )
 register_fprime_executable()

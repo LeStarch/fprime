@@ -22,7 +22,8 @@ void constructApp(int port_number, char* hostname);
 #include <Svc/BufferManager/BufferManager.hpp>
 #include <Svc/Health/HealthComponentImpl.hpp>
 
-#include <Svc/SocketGndIf/SvcSocketGndIfImpl.hpp>
+#include <Drv/SocketIpDriver/SocketIpDriverComponentImpl.hpp>
+#include <Svc/GroundInterface/GroundInterface.hpp>
 
 #include <Svc/AssertFatalAdapter/AssertFatalAdapterComponentImpl.hpp>
 #include <Svc/FatalHandler/FatalHandlerComponentImpl.hpp>
@@ -40,15 +41,22 @@ void constructApp(int port_number, char* hostname);
 extern Svc::RateGroupDriverImpl rateGroupDriverComp;
 extern Svc::ActiveRateGroupImpl rateGroup1HzComp;
 extern Svc::CmdSequencerComponentImpl cmdSeq;
-extern Svc::SocketGndIfImpl sockGndIf;
 extern Svc::ConsoleTextLoggerImpl textLogger;
 extern Svc::ActiveLoggerImpl eventLogger;
 extern Svc::LinuxTimeImpl linuxTime;
 extern Svc::LinuxTimerComponentImpl linuxTimer;
 extern Svc::TlmChanImpl chanTlm;
 extern Svc::CommandDispatcherImpl cmdDisp;
+extern Svc::PrmDbImpl prmDb;
+extern Svc::FileUplink fileUplink;
+extern Svc::FileDownlink fileDownlink;
+extern Svc::BufferManager fileDownlinkBufferManager;
+extern Svc::BufferManager fileUplinkBufferManager;
 extern Svc::AssertFatalAdapterComponentImpl fatalAdapter;
 extern Svc::FatalHandlerComponentImpl fatalHandler;
+extern Svc::HealthImpl health;
+extern Drv::SocketIpDriverComponentImpl socketIpDriver;
+extern Svc::GroundInterfaceComponentImpl groundIf;
 
 // i2c driver
 extern Drv::LinuxI2cDriverComponentImpl i2cDrv;
@@ -61,5 +69,8 @@ extern RobotArm::PcaServoComponentImpl armLengthServo;
 
 // arm demo component
 extern RobotArm::ArmDemoComponentImpl armDemo;
+
+extern Drv::SocketIpDriverComponentImpl socketIpDriver;
+extern Svc::GroundInterfaceComponentImpl groundIf;
 
 #endif
