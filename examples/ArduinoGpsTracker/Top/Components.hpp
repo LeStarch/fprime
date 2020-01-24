@@ -1,7 +1,7 @@
 #ifndef __ARD_COMPONENTS_HEADER__
 #define __ARD_COMPONENTS_HEADER__
 
-#define COMM_SERIAL
+//#define COMM_SERIAL
 
 void constructArduinoArchitecture(void);
 void exitTasks(void);

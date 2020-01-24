@@ -10,7 +10,7 @@ Fw::LogAssertHook assert;
  * Main function.
  */
 int main(int argc, char* argv[]) {
-	assert.registerHook();
+    assert.registerHook();
 #ifdef ARDUINO
     Serial1.begin(115200);
     Os::setArduinoStreamLogHandler(&Serial1);

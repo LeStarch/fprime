@@ -60,8 +60,8 @@
    <instance namespace="Arduino" name="hardwareRateDriver" type="HardwareRateDriver" base_id="2000"  base_id_window="20" />
 
    <!--  Choose one of the following -->
-   <instance namespace="Arduino" name="comm" type="SerialDriver" base_id="2100"  base_id_window="20" />
-   <!-- instance namespace="Arduino" name="comm" type="RadioWrapper" base_id="2100"  base_id_window="20" /-->
+   <!--instance namespace="Arduino" name="comm" type="SerialDriver" base_id="2100"  base_id_window="20" /-->
+   <instance namespace="Arduino" name="comm" type="RadioWrapper" base_id="2100"  base_id_window="20" />
 
    <instance namespace="Gps" name="gps" type="Gps" base_id="2200"  base_id_window="20" />
    
