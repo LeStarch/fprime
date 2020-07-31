@@ -18,7 +18,7 @@ FW_MODULES := \
 	Fw/ComFile \
 	Fw/SerializableFile \
 	Fw/Types \
-        Fw/Logger
+    Fw/Logger
 
 FW_MINIMAL_MODULES := \
 	Fw/Cfg \
@@ -89,13 +89,11 @@ SVC_MODULES := \
 	Svc/CmdDispatcher \
 	Svc/CmdSequencer \
 	Svc/Seq \
-	Svc/GndIf \
 	Svc/ActiveRateGroup \
 	Svc/RateGroupDriver \
 	Svc/Sched \
 	Svc/ComLogger \
 	Svc/TlmChan \
-	Svc/PassiveTextLogger \
 	Svc/PassiveConsoleTextLogger \
 	Svc/Time \
 	Svc/Cycle \
@@ -126,7 +124,8 @@ SVC_MODULES := \
 DEMO_DRV_MODULES := \
 	Drv/DataTypes \
 	Drv/BlockDriver \
-	Drv/GpioDriverPorts
+	Drv/GpioDriverPorts \
+	Drv/SocketIpDriver
 		
 LINUX_DRV_MODULES := \
 	Drv/LinuxGpioDriver \

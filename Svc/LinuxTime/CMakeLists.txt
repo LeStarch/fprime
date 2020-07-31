@@ -24,7 +24,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Teensyduino")
 endif()
 ### UTs ###
 set(UT_SOURCE_FILES
-  "${FPRIME_CORE_DIR}/Svc/Time/TimeComponentAi.xml"
+  "${FPRIME_FRAMEWORK_PATH}/Svc/Time/TimeComponentAi.xml"
   "${CMAKE_CURRENT_LIST_DIR}/test/ut/Tester.cpp"
   "${CMAKE_CURRENT_LIST_DIR}/test/ut/Main.cpp"
 )
