@@ -153,4 +153,7 @@ function(generate_library MODULE_NAME SOURCE_FILES_INPUT DEPS_INPUT)
   endif()
 
   set(AC_OUTPUTS "${AC_OUTPUTS}" PARENT_SCOPE)
+  if (DEFINED FPRIME_CURRENT_FOLDER)
+    set_property(TARGET ${MODULE_NAME} PROPERTY FOLDER ${FPRIME_CURRENT_FOLDER})
+  endif()
 endfunction(generate_library)

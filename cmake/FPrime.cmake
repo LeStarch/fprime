@@ -11,6 +11,7 @@ file(REMOVE "${CMAKE_BINARY_DIR}/hashes.txt")
 # specific project builds work as expected. Since Options.cmak handles cache
 # variables, the path handling is setup in between.
 include("${CMAKE_CURRENT_LIST_DIR}/Options.cmake")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Sets up the build locations of the CMake system. This becomes the root of files
 # being searched for in the cmake system.
 set(FPRIME_BUILD_LOCATIONS "${FPRIME_FRAMEWORK_PATH}" ${FPRIME_LIBRARY_LOCATIONS} "${FPRIME_PROJECT_ROOT}")
