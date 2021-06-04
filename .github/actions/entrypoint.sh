@@ -2,7 +2,12 @@
 
 # Exit when any command fails
 set -e
-
+set -x
 cd "$GITHUB_WORKSPACE"
-"$GITHUB_WORKSPACE/ci/master.bash" QUICK
-"$GITHUB_WORKSPACE/ci/master.bash" STATIC
+if [ "$1" != "docs" ]
+then
+    "$GITHUB_WORKSPACE/ci/master.bash" QUICK
+    "$GITHUB_WORKSPACE/ci/master.bash" STATIC
+else
+    /autodoc.bash
+fi
