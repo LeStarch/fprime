@@ -5,20 +5,20 @@
 # MOD_DEPS: (optional) module dependencies
 #
 ####
-if(NOT DEFINED FPRIME_USE_STUBBED_DRIVERS OR FPRIME_USE_STUBBED_DRIVERS)
-    set(SOURCE_FILES
+(NOT DEFINED FPRIME_USE_STUBBED_DRIVERS OR FPRIME_USE_STUBBED_DRIVERS)
+    (SOURCE_FILES
         "${CMAKE_CURRENT_LIST_DIR}/LinuxGpioDriverComponentAi.xml"
         "${CMAKE_CURRENT_LIST_DIR}/LinuxGpioDriverComponentImplCommon.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/LinuxGpioDriverComponentImplStub.cpp"
     )
-elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    set(SOURCE_FILES
+(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    (SOURCE_FILES
         "${CMAKE_CURRENT_LIST_DIR}/LinuxGpioDriverComponentAi.xml"
         "${CMAKE_CURRENT_LIST_DIR}/LinuxGpioDriverComponentImplCommon.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/LinuxGpioDriverComponentImpl.cpp"
     )
-else()
+()
     message(STATUS "Cannot use ${CMAKE_CURRENT_LIST_DIR} with platform ${CMAKE_SYSTEM_NAME}. Skipping.")
-endif()
+()
 
 register_fprime_module()
