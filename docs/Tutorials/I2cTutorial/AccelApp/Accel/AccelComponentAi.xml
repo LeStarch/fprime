@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="../../Autocoders/Python/schema/ISF/component_schema.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+
+<component name="Accel" kind="passive" namespace="AccelApp" modeler="true">
+    <!-- Standard Ports -->
+    <import_port_type>Fw/Time/TimePortAi.xml</import_port_type>
+    <import_port_type>Fw/Tlm/TlmPortAi.xml</import_port_type>
+    <!-- Scheduled Ports -->
+    <import_port_type>Svc/Sched/SchedPortAi.xml</import_port_type>
+    <!-- I2c Driver Ports -->
+    <import_port_type>Drv/I2cDriverPorts/I2cPortAi.xml</import_port_type>
+    <import_port_type>Drv/I2cDriverPorts/I2cWriteReadPortAi.xml</import_port_type>
+    <!-- Dictionary Definitions -->
+    <import_enum_type>Drv/I2cDriverPorts/I2cStatusEnumAi.xml</import_enum_type>
+
+    <ports>
+        <!-- Time port for timestamps in Telemetry -->
+        <port name="timeCaller" data_type="Fw::Time"  kind="output" role="TimeGet"    max_number="1">
+        </port>
+        <!-- Channel telemetry -->
+        <port name="tlmOut" data_type="Fw::Tlm"  kind="output" role="Telemetry"    max_number="1">
+        </port>
+        <!-- I2c ports-->
+        <port name="I2cWrite" data_type="Drv::I2c"  kind="output"     max_number="1">
+        </port>
+        <port name="I2cRead" data_type="Drv::I2c"  kind="output"     max_number="1">
+        </port>
+        <port name="I2cWriteRead" data_type="Drv::I2cWriteRead"  kind="output"     max_number="1">
+        </port>
+        <!-- scheduled ports -->
+        <port name="SchedIn" data_type="Sched" kind="sync_input" max_number="1">
+        </port>
+    </ports>
+
+  <telemetry>
+    <channel id="0" name="Accel_X" data_type="F32" format_string = "%f" abbrev="Acc-1">
+      <comment>Accelerometer X axis value</comment>
+    </channel>
+    <channel id="1" name="Accel_Y" data_type="F32" format_string = "%f" abbrev="Acc-2">
+      <comment>Accelerometer Y axis value</comment>
+    </channel>
+    <channel id="2" name="Accel_Z" data_type="F32" format_string = "%f" abbrev="Acc-3">
+      <comment>Accelerometer Z axis value</comment>
+    </channel>
+    <channel id="3" name="I2C_BwrateStatus" data_type="Drv::I2cStatus" abbrev="Acc-4">
+      <comment>I2c write status for data transfer rate setup</comment>
+    </channel>
+    <channel id="4" name="I2C_PwrStatus" data_type="Drv::I2cStatus" abbrev="Acc-5">
+      <comment>I2c write status for power setup </comment>
+    </channel>
+    <channel id="5" name="I2C_FormatStatus" data_type="Drv::I2cStatus" abbrev="Acc-6">
+      <comment>I2c write status for format setup </comment>
+    </channel>
+    <channel id="6" name="I2C_Write" data_type="Drv::I2cStatus" abbrev="Acc-7">
+      <comment>I2c write status for writing to the register to read accelerometer sensor data</comment>
+    </channel>
+    <channel id="7" name="I2C_Read" data_type="Drv::I2cStatus" abbrev="Acc-8">
+      <comment>I2c read status for reading the sensor data</comment>
+    </channel>
+  </telemetry>
+</component>
