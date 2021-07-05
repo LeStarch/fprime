@@ -56,7 +56,7 @@ If your accelerometer is powered and connected to R pi, it should show something
 
 We are going to make an accelerometer as a passive component. It won’t have any commands or events but it will provide accelerometer sensor reading on the X Y and Z axes. We are also going to use ports provided by LinuxI2Cdriver for reading and writing. To begin, we are going to create an empty folder in fprime directory called AccelApp. Inside, we are going to create two new folders; Accel and Top. Accel is our component and Top is for topology. Lastly, we will need CMakeLists.txt in AccelApp folder as well.
 
-##Component Design
+## Component Design
 
 In Accel folder, we are going to create a new xml file called AccelComponentAi.xml.
 
@@ -201,7 +201,7 @@ In the terminal, activate fprime virtual environment, then head to AccelApp dire
 fprime-util generate
 ```
 
-##Implementation
+## Implementation
 
 
 Head into the Accel folder and run
@@ -413,7 +413,7 @@ In `Components.hpp` files, we need to include two headers, `AccelComponentImpl.h
 If you copy the `CMakeLists.txt` from `Ref` topology folder, be sure to edit the file to rename the `RefTopologyAppAi.xml` file to `AccelAppTopologyAi.xml`.
 Now it’s time to build our app. All you have to do is running `fprime-util` build in the `AccelApp` directory.
 
-###Cross Compile to Raspberry Pi
+### Cross Compile to Raspberry Pi
 to cross-compile to raspberry pi, use
 ```shell
 fprime-util generate raspberrypi
@@ -423,7 +423,7 @@ fprime-util build raspberrypi
 The build file for our app should be in build-artifacts/raspberrypi/bin directory. Copy the executable to the raspberrypi by using sftp or any other way you prefer. To run this, use fprime-gds -n on your GDS computer and `./AccelApp -a <your GDS computer ip address> -p 50000`. You can try tilting your accelerometer or disconnect them to see if the reading or i2c status in the telemetry shows the value correctly.
 ![Accelerometer in action](img/AccelAppGDS.png)
 
-###Conclusion
+### Conclusion
 
 This tutorial is an attempt to communicate the basic functionality of the i2cdriver. If there are confusing aspects, feel free to submit GitHub issues asking for clarification or to report errors.
 
