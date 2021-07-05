@@ -383,6 +383,7 @@ There’s nothing to edit in AccelComponentImpl.hpp so leave it be. All it left 
 ####
 set(SOURCE_FILES
     "${CMAKE_CURRENT_LIST_DIR}/AccelComponentAi.xml"
+    "${CMAKE_CURRENT_LIST_DIR}/AccelComponentImpl.cpp"
 )
 register_fprime_module()
 ```
