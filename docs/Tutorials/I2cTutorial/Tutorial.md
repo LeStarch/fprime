@@ -5,6 +5,8 @@
 Thank you for helping me out with technical issues over the past few months. You guys have done superb jobs at keeping this framework well maintained. Having such an active community is why I choose F’ over something else for flight control software. I want to help you guys out so I come up with this. This guide comes from a newbie perspective with roughly a month and a half on F’. I don’t have a strong CS background so my code might not be really efficient or my wording here might not be spot on. Feel free to let me know what I got wrong or improvements that can be made. I don’t plan to do SPI and GPIO since we already have RPIdemo for that but if you guys think it’s a good idea to have someone working on that too then I can chip in as well. Also, English is not my first language so bear with me here.
 
 The following example shows how to utilize an I2C driver to write commands to and receive sensor data from ADXL 345 accelerometer as a slave with a Raspberry pi as a master. This project is written and cross-compiled from ubuntu 18.04 to Raspberry pi 3 B+ but it should work with any raspberry pi or any linux based single board computer that supports I2C interface.
+
+
 ![ADXL345](/img/adxl345.jpg)
 
 
@@ -420,6 +422,7 @@ fprime-util build raspberrypi
 ```
 
 The build file for our app should be in build-artifacts/raspberrypi/bin directory. Copy the executable to the raspberrypi by using sftp or any other way you prefer. To run this, use fprime-gds -n on your GDS computer and `./AccelApp -a <your GDS computer ip address> -p 50000`. You can try tilting your accelerometer or disconnect them to see if the reading or i2c status in the telemetry shows the value correctly.
+
 ![Accelerometer in action](/img/AccelAppGDS.png)
 
 ###Conclusion
