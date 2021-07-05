@@ -50,7 +50,7 @@ i2cdetect -y 1
 ```
 If your accelerometer is powered and connected to R pi, it should show something like this 
 
-![I2C Detect](img/i2cDetect.png)
+![I2C Detect](img/i2cdetect.png)
 
 ### Designing the Accelerometer Component
 
