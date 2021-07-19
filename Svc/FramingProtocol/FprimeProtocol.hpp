@@ -36,7 +36,7 @@ class FprimeDeframing : public DeframingProtocol {
 
     bool validate(Types::CircularBuffer& buffer, U32 size);
 
-    DeframingStatus deframe(Types::CircularBuffer& buffer, U32& needed);
+    DeframingStatus deframe(Types::CircularBuffer& buffer);
 };
 };
 #endif  // FPRIMEPROTOCOL_HPP

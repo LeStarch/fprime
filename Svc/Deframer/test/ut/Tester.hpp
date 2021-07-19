@@ -47,7 +47,9 @@ namespace Svc {
       // Tests
       // ----------------------------------------------------------------------
 
-      void test_incoming_frame(U32 buffer_size, U32 expected_size);
+      void send_randomized_data(bool bad_receive=false);
+
+      void test_incoming_frame();
       void test_route(Fw::ComPacket::ComPacketType packet_type);
     private:
 
@@ -124,8 +126,10 @@ namespace Svc {
 
       Fw::Buffer m_buffer;
       MockDeframer m_mock;
-      DeframingProtocol::DeframingStatus m_status;
+      DeframingProtocol::DeframingStatus m_inject_error;
       U32 m_remaining_size;
+      U32 m_next_needed;
+
       bool m_has_port_out;
   };
 

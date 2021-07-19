@@ -108,21 +108,27 @@ void DeframerComponentImpl ::route(Fw::Buffer& data) {
 
 void DeframerComponentImpl ::processRing() {
     FW_ASSERT(m_protocol != NULL);
+
     // Maximum limit to to the loop as at least one byte is process per iteration unless needed > remaining size
     const U32 loop_limit = m_in_ring.get_capacity() + 1;
+    DeframingProtocol::DeframingStatus status = DeframingProtocol::DEFRAMING_MAX_STATUS;
 
     // Inner-loop, process ring buffer looking for at least the header
     U32 i = 0;
-    for (i = 0; (m_in_ring.get_remaining_size() > 0) and (i < loop_limit); i++) {
+    for (i = 0; (m_in_ring.get_remaining_size() > 0) and (i < loop_limit) and (status != DeframingProtocol::DEFRAMING_MORE_NEEDED); i++) {
         const U32 remaining = m_in_ring.get_remaining_size();
-        U32 needed = 0; // Needed is an out-only variable, and should be reset each loop
-        DeframingProtocol::DeframingStatus status = m_protocol->deframe(m_in_ring, needed);
-        FW_ASSERT(needed != 0); //Deframing protocol must always set needed to a non-zero value
-        FW_ASSERT(remaining == m_in_ring.get_remaining_size()); // Deframing protocol must not consume data only view it
+         = m_protocol->deframe(m_in_ring);
+
+
         // Successful deframing consumes messages
-        if (status == DeframingProtocol::DEFRAMING_STATUS_SUCCESS) {
-            m_in_ring.rotate(needed);
-        }
+        if (status != DeframingProtocol::DEFRAMING_MORE_NEEDED) {
+            FW_ASSERT(remaining > m_in_ring.get_remaining_size()); // Must have consumed some data
+            if (status == DeframingProtocol::DEFRAMING_INVALID_CHECKSUM) {
+                Fw::Logger::logMsg("[ERROR] Deframing checksum validation failed\n");
+            }
+        } else () {
+
+            }
         // Break on the condition that more is needed
         else if (status == DeframingProtocol::DEFRAMING_MORE_NEEDED) {
             // Deframing protocol reported inconsistent "more is needed" and needed size
@@ -133,9 +139,7 @@ void DeframerComponentImpl ::processRing() {
         else {
             m_in_ring.rotate(1);
             // Checksum errors get logged as it is unlikely to get to a checksum check on random data
-            if (status == DeframingProtocol::DEFRAMING_INVALID_CHECKSUM) {
-                Fw::Logger::logMsg("[ERROR] Deframing checksum validation failed\n");
-            }
+
         }
     }
     // In every iteration of the loop above data is removed from the buffer, or we break from the loop due. Thus at

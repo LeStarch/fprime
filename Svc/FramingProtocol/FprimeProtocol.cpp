@@ -81,7 +81,8 @@ bool FprimeDeframing::validate(Types::CircularBuffer& ring, U32 size) {
     return true;
 }
 
-DeframingProtocol::DeframingStatus FprimeDeframing::deframe(Types::CircularBuffer& ring, U32& needed) {
+DeframingProtocol::DeframingStatus FprimeDeframing::deframe(Types::CircularBuffer& ring) {
+    U32 needed;
     FP_FRAME_TOKEN_TYPE start = 0;
     FP_FRAME_TOKEN_TYPE size = 0;
     FW_ASSERT(m_interface != NULL);
@@ -98,7 +99,8 @@ DeframingProtocol::DeframingStatus FprimeDeframing::deframe(Types::CircularBuffe
     needed = (FP_FRAME_HEADER_SIZE + size + HASH_DIGEST_LENGTH);
     // Check the header for correctness
     if ((start != FprimeFraming::START_WORD) || (size >= (ring.get_capacity() - FP_FRAME_HEADER_SIZE - HASH_DIGEST_LENGTH))) {
-        return DeframingProtocol::DEFRAMING_INVALID_SIZE;
+        ring.rotate(1);
+        return DeframingProtocol::DEFRAMING_INVALID_FRAME;
     }
     // Check for enough data to deserialize everything otherwise break and wait for more.
     else if (ring.get_remaining_size() < needed) {
@@ -106,6 +108,7 @@ DeframingProtocol::DeframingStatus FprimeDeframing::deframe(Types::CircularBuffe
     }
     // Check the checksum
     if (not this->validate(ring, needed - HASH_DIGEST_LENGTH)) {
+        ring.rotate(1); // Fprime protocol rotates away 1 on any error
         return DeframingProtocol::DEFRAMING_INVALID_CHECKSUM;
     }
     Fw::Buffer buffer = m_interface->allocate(size);
@@ -114,6 +117,7 @@ DeframingProtocol::DeframingStatus FprimeDeframing::deframe(Types::CircularBuffe
     FW_ASSERT(buffer.getSize() >= size);
     buffer.setSize(size);
     ring.peek(buffer.getData(), size, FP_FRAME_HEADER_SIZE);
+    ring.rotate(size);
     m_interface->route(buffer);
     return DeframingProtocol::DEFRAMING_STATUS_SUCCESS;
 }

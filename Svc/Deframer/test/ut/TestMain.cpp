@@ -6,7 +6,7 @@
 
 TEST(Deframer, test_incoming_frame_with_valid_size) {
     Svc::Tester tester;
-    tester.test_incoming_frame(4, 4);
+    tester.test_incoming_frame();
 }
 
 TEST(Deframer, test_incoming_frame_with_invalid_size) {
