@@ -21,6 +21,8 @@ acknowledged.
     <import_port_type>Svc/Sched/SchedPortAi.xml</import_port_type>
     <import_port_type>Svc/Seq/CmdSeqInPortAi.xml</import_port_type>
     <import_port_type>Fw/Log/LogPortAi.xml</import_port_type>
+    <!-- Must be defined by the project -->
+    <import_port_type>Svc/Fault/FaultPortAi.xml</import_port_type>
     <import_dictionary>Svc/CmdSequencer/Commands.xml</import_dictionary>
     <import_dictionary>Svc/CmdSequencer/Telemetry.xml</import_dictionary>
     <import_dictionary>Svc/CmdSequencer/Events.xml</import_dictionary>
@@ -70,6 +72,9 @@ acknowledged.
         </port>
 
         <port name="seqDone" data_type="Fw::CmdResponse"  kind="output"    max_number="1">
+        </port>
+
+        <port name="fault" data_type="Svc::Fault"  kind="output"    max_number="1">
         </port>
     </ports>
 

@@ -542,7 +542,8 @@ namespace Svc {
       //! Initialize a CmdSequencer
       void init(
           const NATIVE_INT_TYPE queueDepth, //!< The queue depth
-          const NATIVE_INT_TYPE instance //!< The instance number
+          const NATIVE_INT_TYPE instance, //!< The instance number
+          const Project::FaultId faultId //!< Fault ID to emit
       );
 
       //! (Optional) Set a timeout. 
@@ -769,6 +770,9 @@ namespace Svc {
       // Private member variables
       // ----------------------------------------------------------------------
 
+      //! Fault id to emit
+      Project::FaultId m_faultId;
+
       //! The F Prime sequence
       FPrimeSequence m_FPrimeSequence;
 
@@ -819,7 +823,6 @@ namespace Svc {
 
       //! error handling modes
       bool m_ignoreCmdFails; //!< ignore command failures
-
   };
 
 };
