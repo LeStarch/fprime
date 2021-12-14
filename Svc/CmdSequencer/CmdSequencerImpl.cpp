@@ -39,7 +39,8 @@ namespace Svc {
         m_blockState(SEQ_NO_BLOCK),
         m_opCode(0),
         m_cmdSeq(0),
-        m_join_waiting(false)
+        m_join_waiting(false),
+        m_ignoreCmdFails(false)
     {
 
     }
@@ -298,24 +299,17 @@ namespace Svc {
             this->m_cmdTimeoutTimer.clear();
             if (response != Fw::COMMAND_OK) {
                 this->commandError(this->m_executedCount, opcode, response);
-                this->performCmd_Cancel();
-            } else if (this->m_runMode == RUNNING && this->m_stepMode == AUTO) {
-                // Auto mode
-                this->commandComplete(opcode);
-                if (not this->m_sequence->hasMoreRecords()) {
-                    // No data left
-                    this->m_runMode = STOPPED;
-                    this->sequenceComplete();
+                if (not this->m_ignoreCmdFails) {
+                    this->performCmd_Cancel();
                 } else {
-                    this->performCmd_Step();
+                    this->log_WARNING_LO_CS_CommandFailIgnored(this->m_executedCount, opcode);
+                    this->commandComplete(opcode);
+                    this->performNext();
                 }
-            } else { 
-                // Manual step mode
+            }
+            else {
                 this->commandComplete(opcode);
-                if (not this->m_sequence->hasMoreRecords()) {
-                    this->m_runMode = STOPPED;
-                    this->sequenceComplete();
-                }
+                this->performNext();
             }
         }
     }
@@ -404,6 +398,47 @@ namespace Svc {
         }
     }
 
+    void CmdSequencerComponentImpl ::
+        CS_SET_TIMEOUT_cmdHandler(
+            const FwOpcodeType opCode,
+            const U32 cmdSeq,
+            U32 timeout
+        )
+    {
+        this->m_timeout = timeout;
+        this->log_ACTIVITY_HI_CS_TimeoutUpdated(timeout);
+        this->tlmWrite_CS_CurrTimeout(timeout);
+        this->cmdResponse_out(opCode, cmdSeq, Fw::COMMAND_OK);
+    }
+
+    void CmdSequencerComponentImpl ::
+        CS_SET_ERROR_MODE_cmdHandler(
+            const FwOpcodeType opCode,
+            const U32 cmdSeq,
+            SeqErrResp resp
+        )
+    {
+        SeqErrRespEvt respEvt = SeqErrRespEvt_MAX;
+
+        switch (resp) {
+            case SEQ_ERR_RESP_FAIL:
+                this->m_ignoreCmdFails = false;
+                respEvt = SEQ_ERR_RESP_FAIL_EVT;
+                break;
+            case SEQ_ERR_RESP_IGNORE:
+                this->m_ignoreCmdFails = true;
+                respEvt = SEQ_ERR_RESP_IGNORE_EVT;
+                break;
+            default:
+                FW_ASSERT(0,resp);
+                break; // for code checker
+        }
+
+        this->tlmWrite_CS_ErrCmdFailIg(this->m_ignoreCmdFails);
+        this->log_ACTIVITY_HI_CS_ErrHandle(respEvt);
+        this->cmdResponse_out(opCode, cmdSeq, Fw::COMMAND_OK);
+    }
+
     // ----------------------------------------------------------------------
     // Helper methods
     // ----------------------------------------------------------------------
@@ -488,6 +523,20 @@ namespace Svc {
         ++this->m_executedCount;
         ++this->m_totalExecutedCount;
         this->tlmWrite_CS_CommandsExecuted(this->m_totalExecutedCount);
+    }
+
+    void CmdSequencerComponentImpl ::
+      performNext()
+    {
+        // Transition to stop when out of data
+        if (not this->m_sequence->hasMoreRecords()) {
+            this->m_runMode = STOPPED;
+            this->sequenceComplete();
+        }
+        // Manual mode does not continue
+        else if (this->m_stepMode == AUTO) {
+            this->performCmd_Step();
+        }
     }
 
     void CmdSequencerComponentImpl ::
