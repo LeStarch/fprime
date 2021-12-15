@@ -40,14 +40,17 @@ namespace Svc {
         m_opCode(0),
         m_cmdSeq(0),
         m_join_waiting(false),
-        m_ignoreCmdFails(false)
+        m_ignoreCmdFails(false),
+        m_faultId(static_cast<Project::FaultId::t>(0))
     {
 
     }
 
     void CmdSequencerComponentImpl::init(const NATIVE_INT_TYPE queueDepth,
-            const NATIVE_INT_TYPE instance) {
+            const NATIVE_INT_TYPE instance,
+            const Project::FaultId faultId) {
         CmdSequencerComponentBase::init(queueDepth, instance);
+        m_faultId = faultId;
     }
 
     void CmdSequencerComponentImpl::setTimeout(const NATIVE_UINT_TYPE timeout) {
@@ -300,6 +303,7 @@ namespace Svc {
             if (response != Fw::COMMAND_OK) {
                 this->commandError(this->m_executedCount, opcode, response);
                 if (not this->m_ignoreCmdFails) {
+                    this->fault_out(0, m_faultId, opcode);
                     this->performCmd_Cancel();
                 } else {
                     this->log_WARNING_LO_CS_CommandFailIgnored(this->m_executedCount, opcode);
