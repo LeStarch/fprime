@@ -253,6 +253,12 @@ namespace Svc {
       // Handlers for typed from ports
       // ----------------------------------------------------------------------
 
+      void from_fault_handler(
+          const NATIVE_INT_TYPE portNum,
+          Project::FaultId identifier,
+          U32 context
+      );
+
       //! Handler for from_seqDone
       //!
       void from_seqDone_handler(

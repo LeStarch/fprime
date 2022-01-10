@@ -36,6 +36,7 @@ namespace Svc {
         m_totalExecutedCount(0),
         m_sequencesCompletedCount(0),
         m_timeout(0),
+        m_response_stored(Fw::CommandResponse_MAX),
         m_blockState(SEQ_NO_BLOCK),
         m_opCode(0),
         m_cmdSeq(0),
@@ -102,6 +103,7 @@ namespace Svc {
             const Fw::CmdStringArg& fileName,
             SeqBlkState block) {
 
+        m_response_stored = Fw::COMMAND_OK; // Reset on run
         if (not this->requireRunMode(STOPPED)) {
             if (m_join_waiting) {
                 // Inform user previous seq file is not complete
@@ -174,15 +176,18 @@ namespace Svc {
         // If file name is non-empty, load a file.
         // Empty file name means don't load.
         if (filename != "") {
+            m_response_stored = Fw::COMMAND_OK;
             Fw::CmdStringArg cmdStr(filename);
             const bool status = this->loadFile(cmdStr);
             if (!status) {
+              m_response_stored = Fw::COMMAND_EXECUTION_ERROR;
               this->seqDone_out(0,0,0,Fw::COMMAND_EXECUTION_ERROR);
               return;
             }
         }
         else if (not this->m_sequence->hasMoreRecords()) {
             // No sequence loaded
+            m_response_stored = Fw::COMMAND_EXECUTION_ERROR;
             this->log_WARNING_LO_CS_NoSequenceActive();
             this->error();
             this->seqDone_out(0,0,0,Fw::COMMAND_EXECUTION_ERROR);
@@ -231,10 +236,14 @@ namespace Svc {
         const FwOpcodeType opCode, const U32 cmdSeq) {
 
         // If there is no running sequence do not wait
-        if (m_runMode != RUNNING) {
+        if (m_runMode != RUNNING && m_response_stored == Fw::CommandResponse_MAX) {
             this->log_WARNING_LO_CS_NoSequenceActive();
-            this->cmdResponse_out(opCode,cmdSeq,Fw::COMMAND_OK);
-            return;
+            this->cmdResponse_out(opCode, cmdSeq, Fw::COMMAND_OK);
+        } else if (m_runMode != RUNNING) {
+            if (m_response_stored != Fw::COMMAND_OK) {
+                this->log_WARNING_HI_CS_PreviousError();
+            }
+            this->cmdResponse_out(opCode, cmdSeq, m_response_stored);
         } else {
             m_join_waiting = true;
             Fw::LogStringArg& logFileName = this->m_sequence->getLogFileName();
@@ -276,11 +285,12 @@ namespace Svc {
         if (this->isConnected_seqDone_OutputPort(0)) {
             this->seqDone_out(0,0,0,Fw::COMMAND_EXECUTION_ERROR);
         }
+        m_response_stored = Fw::COMMAND_EXECUTION_ERROR;
 
         if (SEQ_BLOCK == this->m_blockState || m_join_waiting) {
             // Do not wait if sequence was canceled or a cmd failed
             this->m_join_waiting = false;
-            this->cmdResponse_out(this->m_opCode, this->m_cmdSeq, Fw::COMMAND_EXECUTION_ERROR);
+            this->cmdResponse_out(this->m_opCode, this->m_cmdSeq, m_response_stored);
         }
 
         this->m_blockState = SEQ_NO_BLOCK;
@@ -499,6 +509,7 @@ namespace Svc {
 
     void CmdSequencerComponentImpl::sequenceComplete(void) {
         ++this->m_sequencesCompletedCount;
+        m_response_stored = Fw::COMMAND_OK;
         // reset buffer
         this->m_sequence->clear();
         this->log_ACTIVITY_HI_CS_SequenceComplete(this->m_sequence->getLogFileName());
@@ -510,7 +521,7 @@ namespace Svc {
         }
 
         if (SEQ_BLOCK == this->m_blockState || m_join_waiting) {
-            this->cmdResponse_out(this->m_opCode, this->m_cmdSeq, Fw::COMMAND_OK);
+            this->cmdResponse_out(this->m_opCode, this->m_cmdSeq, m_response_stored);
         }
 
         m_join_waiting = false;

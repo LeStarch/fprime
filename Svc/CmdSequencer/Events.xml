@@ -341,5 +341,8 @@ acknowledged.
             </arg>
         </args>
     </event>
-
+    <event id="28" name="CS_PreviousError" severity="WARNING_HI"
+           format_string="Previously completed sequence errored">
+        <comment>The Sequence File Loader could not read the sequence file.</comment>
+    </event>
 </events>

@@ -67,6 +67,16 @@ namespace Svc {
   }
 
   void Tester ::
+    from_fault_handler(
+      const NATIVE_INT_TYPE portNum,
+      Project::FaultId identifier,
+      U32 context
+  )
+  {
+      this->pushFromPortEntry_fault(identifier, context);
+  }
+
+  void Tester ::
     from_comCmdOut_handler(
         const NATIVE_INT_TYPE portNum,
         Fw::ComBuffer &data,
@@ -657,6 +667,12 @@ namespace Svc {
       0,
       this->get_from_pingOut(0)
     );
+    
+    // fault
+    this->component.set_fault_OutputPort(
+      0,
+      this->get_from_fault(0)
+    );
 
     // schedIn
     this->connect_to_schedIn(0, this->component.get_schedIn_InputPort(0));
@@ -700,7 +716,8 @@ namespace Svc {
     initComponents(void)
   {
     this->init();
-    this->component.init(QUEUE_DEPTH, INSTANCE);
+    Project::FaultId fid;
+    this->component.init(QUEUE_DEPTH, INSTANCE, fid);
   }
 
   void Tester ::

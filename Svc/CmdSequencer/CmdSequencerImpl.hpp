@@ -816,6 +816,7 @@ namespace Svc {
       Timer m_cmdTimeoutTimer;
 
       //! Block mode for command status
+      Fw::CommandResponse m_response_stored;
       SeqBlkState m_blockState;
       FwOpcodeType m_opCode;
       U32 m_cmdSeq;
