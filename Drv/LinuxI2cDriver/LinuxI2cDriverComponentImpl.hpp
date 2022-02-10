@@ -37,7 +37,11 @@ namespace Drv {
           const NATIVE_INT_TYPE instance = 0 /*!< The instance number*/
       );
 
-      bool open(const char* device);
+      bool open(
+              const char* device, /*!< Device to open */
+              I32 timeout_10ms = -1 /*!< Timeout in 10ms increments, ignored if negative or zero */
+      );
+
       //! Destroy object LinuxI2cDriver
       //!
       ~LinuxI2cDriverComponentImpl(void);

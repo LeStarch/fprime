@@ -56,9 +56,19 @@ namespace Drv {
     }
   }
 
-  bool LinuxI2cDriverComponentImpl::open(const char* device) {
+  bool LinuxI2cDriverComponentImpl::open(const char* device, I32 timeout_10ms) {
       FW_ASSERT(device);
       this->m_fd = ::open(device, O_RDWR);
+      if (this->m_fd != -1 && timeout_10ms > 0) {
+          int stat = ioctl(this->m_fd, I2C_TIMEOUT, timeout_10ms);
+          if (stat == -1) {
+              close(this->m_fd);
+              this->m_fd = -1;
+#if DEBUG_PRINT
+              Fw::Logger::logMsg("Failed to set I2C_TIMEOUT. Status: %d Errno: %d\n", stat, errno);
+#endif
+          }
+      }
       return (-1 != this->m_fd);
   }
 
