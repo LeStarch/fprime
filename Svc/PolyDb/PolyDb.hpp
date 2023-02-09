@@ -18,7 +18,7 @@
 
 namespace Svc {
 
-    //! \class PolyDbImpl
+    //! \class PolyDb
     //! \brief PolyDb Component Class
     //!
     //! This component allows the setting and retrieving of PolyType
@@ -28,31 +28,31 @@ namespace Svc {
     //! to ENs (Engineering Numbers) to decouple the conversion as well.
     //!
 
-    class PolyDbImpl : public PolyDbComponentBase {
+    class PolyDb : public PolyDbComponentBase {
         public:
-            //!  \brief PolyDbImpl constructor
+            //!  \brief PolyDb constructor
             //!
             //!  The constructor initializes the database to "MeasurementStatus::STALE."
             //!  All values retrieved will have this status until the first
             //!  update is received.
             //!
 
-            PolyDbImpl(const char* name);
+            PolyDb(const char* name);
 
-            //!  \brief PolyDbImpl initialization
+            //!  \brief PolyDb initialization
             //!
-            //!  The PolyDbImpl initialization function calls the base
+            //!  The PolyDb initialization function calls the base
             //!  class initializer.
             //!
 
             void init(NATIVE_INT_TYPE instance);
 
-            //!  \brief PolyDbImpl destructor
+            //!  \brief PolyDb destructor
             //!
             //!  The destructor is empty.
             //!
 
-            virtual ~PolyDbImpl();
+            virtual ~PolyDb();
         protected:
         private:
 
