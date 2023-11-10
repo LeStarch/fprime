@@ -16,6 +16,7 @@
 #endif
 
 static const NATIVE_INT_TYPE SCHED_POLICY = SCHED_RR;
+static bool log_once = false;
 
 typedef void* (*pthread_func_ptr)(void*);
 
@@ -182,7 +183,6 @@ namespace Os {
         }
         (void)pthread_attr_destroy(&att);
         if (stat != 0) {
-            (void)pthread_join(*tid, nullptr);
             delete tid;
             tid = nullptr;
             Fw::Logger::logMsg("pthread_create: %s. %s\n", reinterpret_cast<POINTER_CAST>(message), reinterpret_cast<POINTER_CAST>(strerror(stat)));
@@ -208,12 +208,12 @@ namespace Os {
         // Try to create thread with assuming permissions
         TaskStatus status = create_pthread(priority, stackSize, cpuAffinity, tid, &this->m_routineWrapper, true);
         // Failure due to permission automatically retried
-        if (status == TASK_ERROR_PERMISSION) {
-            Fw::Logger::logMsg("[WARNING] Insufficient Permissions:\n");
-            Fw::Logger::logMsg("[WARNING] Insufficient permissions to set task priority or set task CPU affinity on task %s. Creating task without priority nor affinity.\n", reinterpret_cast<POINTER_CAST>(m_name.toChar()));
-            Fw::Logger::logMsg("[WARNING] Please use no-argument <component>.start() calls, set priority/affinity to TASK_DEFAULT or ensure user has correct permissions for operating system.\n");
-            Fw::Logger::logMsg("[WARNING]      Note: future releases of fprime will fail when setting priority/affinity without sufficient permissions \n");
+        if (status == TASK_ERROR_PERMISSION && !log_once) {
+            Fw::Logger::logMsg("[INFO] Insufficient Permissions:\n");
+            Fw::Logger::logMsg("[INFO] Insufficient permissions to set task priority or set task CPU affinity on task %s. Creating task without priority nor affinity.\n", reinterpret_cast<POINTER_CAST>(m_name.toChar()));
+            Fw::Logger::logMsg("[INFO] Please use no-argument <component>.start() calls, set priority/affinity to TASK_DEFAULT or ensure user has correct permissions for operating system.\n");
             Fw::Logger::logMsg("\n");
+            log_once = true;
             status = create_pthread(priority, stackSize, cpuAffinity, tid, &this->m_routineWrapper, false); // Fallback with no permission
         }
         // Check for non-zero error code
