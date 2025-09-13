@@ -8,6 +8,7 @@ register_fprime_config(
         "${CMAKE_CURRENT_LIST_DIR}/AcConstants.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/DpCfg.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/ComCfg.fpp"
+        "${CMAKE_CURRENT_LIST_DIR}/FaultCfg.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/FpConfig.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/FpySequencerCfg.fpp"
         "${CMAKE_CURRENT_LIST_DIR}/PolyDbCfg.fpp"
