@@ -1,3 +1,9 @@
 [submodule "googletest"]
 	path = googletest
 	url = https://github.com/google/googletest.git
+[submodule "Svc/WasmSequencer/wasm3"]
+	path = Svc/WasmSequencer/wasm3
+	url = https://github.com/wasm3/wasm3
+[submodule "Svc/WasmSequencer/wasm-micro-runtime"]
+	path = Svc/WasmSequencer/wasm-micro-runtime
+	url = https://github.com/bytecodealliance/wasm-micro-runtime

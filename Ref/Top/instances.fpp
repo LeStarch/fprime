@@ -53,7 +53,7 @@ module Ref {
 
   instance typeDemo: Ref.TypeDemo base id 0x10005000
 
-  instance cmdSeq: Svc.CmdSequencer base id 0x10006000 \
+  instance cmdSeq: Svc.WasmSequencer base id 0x10006000 \
     queue size Default.QUEUE_SIZE \
     stack size Default.STACK_SIZE \
     priority 20

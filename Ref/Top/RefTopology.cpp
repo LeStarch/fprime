@@ -52,7 +52,7 @@ void configureTopology() {
     rateGroup3Comp.configure(rateGroup3Context, FW_NUM_ARRAY_ELEMENTS(rateGroup3Context));
 
     // Command sequencer needs to allocate memory to hold contents of command sequences
-    cmdSeq.allocateBuffer(0, mallocator, 5 * 1024);
+    //cmdSeq.allocateBuffer(0, mallocator, 5 * 1024);
 }
 
 // Public functions for use in main program are namespaced with deployment name Ref
@@ -106,7 +106,7 @@ void teardownTopology(const TopologyState& state) {
     (void)comDriver.join();
 
     // Resource deallocation
-    cmdSeq.deallocateBuffer(mallocator);
+    //cmdSeq.deallocateBuffer(mallocator);
     tearDownComponents(state);
 }
 }  // namespace Ref
