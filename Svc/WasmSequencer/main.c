@@ -29,34 +29,46 @@ int main() {
     char valueBuffer[20 * 3 + 1];
 
 
-    int32_t status = getTelemetry(16777217, timeBuffer, sizeof(timeBuffer), dataBuffer, sizeof(dataBuffer));
+    int32_t status = telemetry(16777217, timeBuffer, sizeof(timeBuffer), dataBuffer, sizeof(dataBuffer));
     memHexify(dataBuffer, valueBuffer, dumpLen);
-    sequenceMessage(valueBuffer);
+    message(valueBuffer);
     if (status != 0) {
-        sequenceMessage("Failed to get initial telemetry");
+        message("Failed to get initial telemetry");
         return 1; 
     }
     int32_t commandsErrored = processCommandErrored(dataBuffer + 2, value);
     if (commandsErrored != 0) {
-        sequenceMessage("Error count is not zero");
-        sequenceMessage(value);
+        message("Error count is not zero");
+        message(value);
     }
 
     for (int i = 0; i < 2; i++) {
-        sequenceMessage("Hello from the void!");
-        status = sendCommand(op, 0, 0); // NO_OP has no arguments
+        message("Hello from the void!");
+        // Set up a buffer
+        uint8_t buffer[] = "\0\0YOLO";
+        buffer[0] = 0;
+        buffer[1] = 4;
+        status = command(op, buffer, sizeof(buffer) - 1); // NO_OP has no arguments
         if (status != 0) {
-            sequenceMessage("Failed to send command");
-            op--;       
+            message("Failed to send command (string)");    
         }
+
+        status = command(op, 0, 0); // NO_OP has no arguments
+        if (status != 0) {
+            message("Failed to send command");     
+        }
+        op--;  
     }
-    status = getTelemetry(16777217, timeBuffer, sizeof(timeBuffer), dataBuffer, sizeof(dataBuffer));
+    status = telemetry(16777217, timeBuffer, sizeof(timeBuffer), dataBuffer, sizeof(dataBuffer));
     if (status != 0) {
-        sequenceMessage("Failed to get telemetry -- again");
+        message("Failed to get telemetry -- again");
     }
     else if (commandsErrored != processCommandErrored(dataBuffer + 2, value)) {
-        sequenceMessage("Error count changed!!!!");
-        sequenceMessage(value);
-    } 
+        message("Error count changed!!!!");
+        message(value);
+    } else {
+        panic("OH SNAP");
+        exit(-3);
+    }
     return 20; 
 }

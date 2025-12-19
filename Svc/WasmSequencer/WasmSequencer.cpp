@@ -46,13 +46,11 @@ void WasmSequencer ::cmdResponseIn_handler(FwIndexType portNum,
                                            FwOpcodeType opCode,
                                            U32 cmdSeq,
                                            const Fw::CmdResponse& response) {
-    Fw::Logger::log("[INFO] Received command response\n");
     // Update the last command response and notify the waiting thread
     {
         Os::ScopeLock lock(this->m_command_mutex);
         this->m_last_command_response = response;
     }
-    Fw::Logger::log("[INFO] Received command response\n");
     this->m_command_outstanding.notify();
 }
 
@@ -72,34 +70,39 @@ void WasmSequencer ::tlmWrite_handler(FwIndexType portNum, U32 context) {
 // Handler implementations for commands
 // ----------------------------------------------------------------------
 
-M3Result WasmSequencer ::linkModule() {
-    M3Result result = m3_LinkRawFunctionEx(this->m_module, "*", "sequenceMessage",
-        "v(ii)", &::emitMessage, this
-    );
-    if (result != m3Err_none) {
-        Fw::Logger::log("[ERROR] Failed to link wasm sequenceMessage function: %s\n", result);
-    }
-    result = m3_LinkRawFunctionEx(this->m_module, "*", "sendCommand",
-        "i(iii)", &::sendCommand, this
-    );
-    if (result != m3Err_none) {
-        Fw::Logger::log("[ERROR] Failed to link wasm sendCommand function: %s\n", result);
-    }
-    result = m3_LinkRawFunctionEx(this->m_module, "*", "getTelemetry",
-        "i(iiiii)", &::getTelemetry, this
-    );
-    if (result != m3Err_none) {
-        Fw::Logger::log("[ERROR] Failed to link wasm getTelemetry function: %s\n", result);
+M3Result WasmSequencer ::linkFunctions() {
+    M3Result result = m3Err_none;
+    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(WASM_LINK_FUNCTIONS); i++) {
+        result = m3_LinkRawFunctionEx(this->m_module, WASM_MODULE_NAME, WASM_LINK_FUNCTIONS[i].name,
+            WASM_LINK_FUNCTIONS[i].signature, WASM_LINK_FUNCTIONS[i].function, this
+        );
+        // Log a warning if we fail to link a function, but continue linking the rest to flush out other errors
+        if (result != m3Err_none) {
+            Fw::Logger::log("[ERROR] Failed to link wasm function: %s\n", result);
+        }
     }
     return result;
 }
 
-void WasmSequencer ::emitMessage(Fw::StringBase& message) {
+void WasmSequencer ::message_sequencer(Fw::StringBase& message) {
     this->log_ACTIVITY_HI_SequenceMessage(message);
 }
 
-const Fw::CmdResponse  WasmSequencer ::sendCommand(Fw::ComBuffer& command) {
-    Fw::Logger::log("[INFO] Sending command\n");
+void WasmSequencer ::panic_sequencer(Fw::StringBase& message) {
+    this->log_WARNING_HI_SequencePanic(message);
+}
+
+void WasmSequencer ::exit_sequencer(int32_t exit_code) {
+    if (exit_code != 0) {
+        this->log_WARNING_HI_SequenceFailed(exit_code);
+    } else {
+        this->log_ACTIVITY_HI_SequenceSucceeded();
+    }
+}
+
+
+
+const Fw::CmdResponse  WasmSequencer ::command_sequence(Fw::ComBuffer& command) {
     this->m_command_mutex.lock();
     this->cmdOut_out(0, command, 0);
     this->m_command_outstanding.wait(this->m_command_mutex);
@@ -108,7 +111,7 @@ const Fw::CmdResponse  WasmSequencer ::sendCommand(Fw::ComBuffer& command) {
     return response;
 }
 
-Fw::TlmValid  WasmSequencer ::getTelemetry(FwChanIdType id, Fw::Time& time, Fw::TlmBuffer& val) {
+Fw::TlmValid  WasmSequencer ::telemetry_sequence(FwChanIdType id, Fw::Time& time, Fw::TlmBuffer& val) {
     return this->getTlmChan_out(0, id, time, val);
 }
 
@@ -126,7 +129,7 @@ void WasmSequencer ::load_sequence(const Fw::StringBase& fileName) {
             result = m3_LoadModule(m_wasm_runtime, m_module);
         }
         if (result == m3Err_none) {
-            result = this->linkModule();
+            result = this->linkFunctions();
         }
         if (result == m3Err_none) {
             IM3Function function;

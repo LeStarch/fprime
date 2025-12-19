@@ -82,17 +82,36 @@ class WasmSequencer final : public WasmSequencerComponentBase {
   public:
     //! \brief emit a message using the SequenceMessage event
     //!
-    void emitMessage(Fw::StringBase& message);
+    //! This function will emit a message using the SequenceMessage event that is tied to the C callback
+    //! and provides the sequencer backing.
+    void message_sequencer(Fw::StringBase& message);
 
-    //! \brief send a command using the SequenceMessage event
+    //! \brief emit a message using the SequencePanic event
     //!
-    const Fw::CmdResponse sendCommand(Fw::ComBuffer& command);
+    //! This function will emit a message using the SequencePanic event that is tied to the C callback
+    //! and provides the sequencer backing. It will terminate the sequence.
+    void panic_sequencer(Fw::StringBase& message);
+
+    //! \brief exit the sequence
+    //!
+    //! This function will exit the sequence and return the sequence complete event.
+    void exit_sequencer(int32_t exit_code);
+
+
+    //! \brief send a command using the sequencer
+    //!
+    //! This function will send a command using the sequencer and block on the response.  It will the return the command status
+    //! up to the application.
+    const Fw::CmdResponse command_sequence(Fw::ComBuffer& command);
 
     //! \brief get telemetry
     //!
-    Fw::TlmValid getTelemetry(FwChanIdType id, Fw::Time& time, Fw::TlmBuffer& val);
+    //! This function will get telemetry from the sequence and return it to the WASM sequence
+    Fw::TlmValid telemetry_sequence(FwChanIdType id, Fw::Time& time, Fw::TlmBuffer& val);
 
-    M3Result linkModule();
+    //! \brief helper to link functions to the module
+    //!
+    M3Result linkFunctions();
 
     void load_sequence(const Fw::StringBase& filename);
     void run_sequence();
