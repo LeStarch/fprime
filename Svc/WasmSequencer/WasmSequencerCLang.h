@@ -16,6 +16,10 @@ extern int32_t command_wasm(uint32_t pointer, uint32_t length);
 __attribute__((import_module("fprime_core"), import_name("telemetry")))
 extern int32_t telemetry_wasm(uint32_t telemetryId, uint32_t time_out, uint32_t time_length, uint32_t value_out, uint32_t value_length);
 
+__attribute__((import_module("fprime_core"), import_name("rsleep")))
+extern void rsleep_wasm(uint64_t microseconds);
+
+
 const int32_t MAX_STRING_LENGTH = 256; // From: FW_FIXED_LENGTH_STRING_SIZE
 
 //! \brief Get the length of a string (bounded by MAX_STRING_LENGTH)
@@ -93,4 +97,14 @@ int32_t telemetry(uint32_t id, const uint8_t* time, uint32_t time_length, const 
     int32_t response = telemetry_wasm(id, time_pointer, time_length, value_pointer, value_length);
     return response;
 }
+
+//! \brief Sleep for a given number of microseconds
+//!
+//! This function will sleep for the given number of microseconds relative to the current time.
+//! \param microseconds number of microseconds to sleep
+void rsleep(uint64_t microseconds) {
+    rsleep_wasm(microseconds);
+}
+
+
 #endif // WASM_SEQUENCER_CLANG_H

@@ -100,6 +100,10 @@ void WasmSequencer ::exit_sequencer(int32_t exit_code) {
     }
 }
 
+void WasmSequencer ::rsleep_sequencer(Fw::TimeInterval& sleep_interval) {
+    // Sleep for the given interval
+    Os::Task::delay(sleep_interval);
+}
 
 
 const Fw::CmdResponse  WasmSequencer ::command_sequence(Fw::ComBuffer& command) {
@@ -181,8 +185,13 @@ void WasmSequencer ::RUN_cmdHandler(FwOpcodeType opCode,
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::EXECUTION_ERROR);
         return;
     } else {
+        if (block == Svc::WasmSequencer_BlockState::NO_BLOCK) {
+            this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+        }
         this->run_sequence();
-        this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+        if (block == Svc::WasmSequencer_BlockState::BLOCK) {
+            this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
+        }
     }
 }
 

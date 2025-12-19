@@ -97,6 +97,10 @@ class WasmSequencer final : public WasmSequencerComponentBase {
     //! This function will exit the sequence and return the sequence complete event.
     void exit_sequencer(int32_t exit_code);
 
+    //! \brief relative sleep in the sequence
+    //!
+    //! This function will sleep the sequence for the given number of microseconds relative to the current time.
+    void rsleep_sequencer(Fw::TimeInterval& sleep_interval);
 
     //! \brief send a command using the sequencer
     //!

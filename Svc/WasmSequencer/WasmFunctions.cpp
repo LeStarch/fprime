@@ -35,7 +35,6 @@ const void* message_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, vo
     Fw::String argument;
     fill_string(argument, static_cast<const char*>(mem) + stringOffset, stringLength);
     sequencer->message_sequencer(argument);
-    //m3ApiReturn(nullptr); // No return value
     m3ApiSuccess()
 }
 
@@ -70,14 +69,14 @@ const void* command_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, vo
     FW_ASSERT(sequencer != nullptr);
     Fw::CmdResponse response = sequencer->command_sequence(argument); // Will block (non-busy) until the command is done
     int32_t responseCode = static_cast<int32_t>(response.e);
-    m3ApiReturn(responseCode); // No return value
+    m3ApiReturn(responseCode)
     m3ApiSuccess()
 }
 
 
 
 const void* telemetry_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, void* mem) {
-    m3ApiReturnType(int32_t); // Return type is void
+    m3ApiReturnType(int32_t);
     m3ApiGetArg(I32, id);
     m3ApiGetArg(I32, timeAddress);
     m3ApiGetArg(I32, timeLength);
@@ -87,7 +86,6 @@ const void* telemetry_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, 
     Svc::WasmSequencer* sequencer = reinterpret_cast<Svc::WasmSequencer*>(_ctx->userdata);
     FW_ASSERT(sequencer != nullptr);
     FW_ASSERT(static_cast<size_t>(timeLength) >= Fw::Time::SERIALIZED_SIZE);
-    FW_ASSERT(static_cast<size_t>(dataLength) >= Fw::TlmBuffer::SERIALIZED_SIZE);
     Fw::Time timeMemory;
     Fw::TlmBuffer dataMemory;
     Fw::TlmValid valid = sequencer->telemetry_sequence(static_cast<FwChanIdType>(id), timeMemory, dataMemory);
@@ -97,4 +95,18 @@ const void* telemetry_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, 
     FW_ASSERT(timeMemoryWrapper.serializeFrom(timeMemory) == Fw::SerializeStatus::FW_SERIALIZE_OK);
     FW_ASSERT(valueMemoryWrapper.serializeFrom(dataMemory) == Fw::SerializeStatus::FW_SERIALIZE_OK);
     m3ApiReturn(valid.e);
+    m3ApiSuccess()
+}
+
+const void* rsleep_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, void* mem) {
+    m3ApiGetArg(U64, microseconds);
+    // Prevent overflow when converting to U32 for TimeInterval
+    FW_ASSERT((microseconds/1000000) <= static_cast<U64>(std::numeric_limits<U32>::max()));
+ 
+    Fw::TimeInterval sleepInterval(static_cast<U32>(microseconds / 1000000), static_cast<U32>(microseconds % 1000000));
+    
+    Svc::WasmSequencer* sequencer = reinterpret_cast<Svc::WasmSequencer*>(_ctx->userdata);
+    FW_ASSERT(sequencer != nullptr);
+    sequencer->rsleep_sequencer(sleepInterval);
+    m3ApiSuccess()
 }

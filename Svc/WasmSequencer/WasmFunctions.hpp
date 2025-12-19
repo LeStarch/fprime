@@ -61,6 +61,13 @@ const void* exit_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, void*
 //!
 const void* telemetry_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, void* mem);
 
+//! \brief sleep for a given number of microseconds relative to the current time
+//!
+//! This function is called from WASM code to sleep for a given number of microseconds. It uses the standard WASM3
+//! signature for a linked function.
+//! This function will call the sequencer's sleep method.
+const void* rsleep_host(IM3Runtime rt, IM3ImportContext _ctx, uint64_t* _sp, void* mem);
+
 // Module name for F Prime/WASM3
 static constexpr const char* WASM_MODULE_NAME = "fprime_core";
 
@@ -76,7 +83,8 @@ static constexpr WasmLinking WASM_LINK_FUNCTIONS[] = {
     {"panic",   "v(ii)", &panic_host},
     {"exit",   "v(i)", &exit_host},
     {"command", "i(ii)", &command_host},
-    {"telemetry", "i(iiiii)", &telemetry_host}
+    {"telemetry", "i(iiiii)", &telemetry_host},
+    {"rsleep", "v(I)", &rsleep_host}
 };
 
 #endif // SVC_WASM_SEQUENCER_HPP
