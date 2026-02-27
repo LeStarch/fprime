@@ -31,6 +31,7 @@ set(FPRIME_UTIL_CRITICAL_LIST
 # Uses a python script to load INI files. These items are set into the CMake cache.
 ####
 function(ini_to_cache)
+    return()
     set(CALCULATED_INI "${CMAKE_SOURCE_DIR}/settings.ini")
 
     # Check if settings.ini is defined and is not what is expected

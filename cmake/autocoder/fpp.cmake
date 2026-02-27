@@ -201,7 +201,7 @@ function(fpp_setup_autocode MODULE_NAME AC_INPUT_FILES)
         message(FATAL_ERROR "fpp tools not found, please install them onto your system path")
     endif()
     fpp_info("${MODULE_NAME}" "${AC_INPUT_FILES}")
-    set(CMAKE_BINARY_DIR_RESOLVED "${CMAKE_BINARY_DIR}")
+    set(CMAKE_BINARY_DIR_RESOLVED "${PROJECT_BINARY_DIR}")
     set(CMAKE_CURRENT_BINARY_DIR_RESOLVED "${CMAKE_CURRENT_BINARY_DIR}")
     resolve_path_variables(CMAKE_BINARY_DIR_RESOLVED CMAKE_CURRENT_BINARY_DIR_RESOLVED)
     string(REGEX REPLACE ";" ","  FPRIME_BUILD_LOCATIONS_COMMA_SEP "${FPRIME_BUILD_LOCATIONS}")
@@ -241,7 +241,7 @@ function(fpp_setup_autocode MODULE_NAME AC_INPUT_FILES)
     endif()
     # Add in dictionary generation
     if (GENERATED_DICT)
-        set(FPRIME_JSON_VERSION_FILE "${CMAKE_BINARY_DIR}/versions/version.json")
+	    set(FPRIME_JSON_VERSION_FILE "${CMAKE_BINARY_DIR}/versions/version.json")
         add_custom_command(
             OUTPUT ${GENERATED_DICT}
             COMMAND ${FPRIME_FPP_TO_DICT_WRAPPER}
