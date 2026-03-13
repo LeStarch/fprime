@@ -10,13 +10,15 @@ include(utilities)
 include(implementation)
 
 # Flags used when BUILD_TESTING is enabled
-set(FPRIME_TESTING_REQUIRED_COMPILE_FLAGS)
-set(FPRIME_TESTING_REQUIRED_LINK_FLAGS)
+# TODO (CMAKE): these should be properties of the targets, not global variables
+set(FPRIME_TESTING_REQUIRED_COMPILE_FLAGS CACHE INTERNAL "Compile flags required for testing" FORCE)
+set(FPRIME_TESTING_REQUIRED_LINK_FLAGS CACHE INTERNAL "Link flags required for testing" FORCE)
 
 # Special coverage for unit tests
 if (FPRIME_ENABLE_UT_COVERAGE)
-    list(APPEND FPRIME_TESTING_REQUIRED_COMPILE_FLAGS -fprofile-arcs -ftest-coverage)
-    list(APPEND FPRIME_TESTING_REQUIRED_LINK_FLAGS --coverage)
+    # TODO (CMAKE): these should be properties of the targets, not global variables
+    list(APPEND FPRIME_TESTING_REQUIRED_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage" CACHE INTERNAL "Compile flags required for testing with coverage" FORCE)
+    list(APPEND FPRIME_TESTING_REQUIRED_LINK_FLAGS "--coverage" CACHE INTERNAL "Link flags required for testing with coverage" FORCE)
 endif()
 
 ####

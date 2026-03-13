@@ -7,9 +7,9 @@
 # this path will be used for searching for libraries/headers to compile against.
 ####
 # Set the system information
-set(CMAKE_SYSTEM_NAME       Linux)
-set(FPRIME_PLATFORM         Linux)
-set(CMAKE_SYSTEM_VERSION    0.2)
+set(CMAKE_SYSTEM_NAME       Linux CACHE INTERNAL "Set the system name to Linux for this toolchain" FORCE)
+set(FPRIME_PLATFORM         Linux CACHE INTERNAL "Set the FPrime platform to Linux for this toolchain" FORCE)
+set(CMAKE_SYSTEM_VERSION    0.2 CACHE INTERNAL "Set the system version to 0.2 for this toolchain" FORCE)
 
 # Check ARM tools path
 set(FPRIME__INTERNAL_FIND_INPUTS PATHS ENV ARM_TOOLS_PATH PATH_SUFFIXES bin REQUIRED)
@@ -37,7 +37,7 @@ if (DEFINED CMAKE_SYSROOT)
 endif()
 
 # Configure the find commands for finding the toolchain
-set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER CACHE INTERNAL "Set the find root path mode for programs to NEVER for this toolchain" FORCE)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY CACHE INTERNAL "Set the find root path mode for libraries to ONLY for this toolchain" FORCE)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY CACHE INTERNAL "Set the find root path mode for includes to ONLY for this toolchain" FORCE)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY CACHE INTERNAL "Set the find root path mode for packages to ONLY for this toolchain" FORCE)

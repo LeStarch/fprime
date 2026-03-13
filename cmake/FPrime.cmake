@@ -7,7 +7,8 @@
 ####
 include_guard()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+# TODO: how do I fix this?
+add_compile_options(-fPIC)
 include(utilities)
 include(options)
 include(sanitizers) # Enable sanitizers if they are requested
