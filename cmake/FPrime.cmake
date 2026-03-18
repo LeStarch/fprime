@@ -9,6 +9,8 @@ include_guard()
 
 # TODO: how do I fix this?
 add_compile_options(-fPIC)
+list(APPEND CMAKE_MODULE_PATH "${FPRIME_FRAMEWORK_PATH}/cmake")
+
 include(utilities)
 include(options)
 include(sanitizers) # Enable sanitizers if they are requested
@@ -38,8 +40,9 @@ list(REMOVE_DUPLICATES FPRIME_LIBRARY_LOCATIONS)
 # paths to given files.
 # Now that modules can build within the build cache, the build cache locations (root, F-Prime) are added to the list of
 # locations. This allows for the detection of modules that are built within the build cache.
+# TODO: CMAKE_BINARY_DIR should not be used, however; it is unclear why modules are being placed there.
 set(FPRIME_BUILD_LOCATIONS "${FPRIME_FRAMEWORK_PATH}" ${FPRIME_LIBRARY_LOCATIONS} "${FPRIME_PROJECT_ROOT}"
-    "${CMAKE_BINARY_DIR}/F-Prime" "${CMAKE_BINARY_DIR}")
+    "${CMAKE_BINARY_DIR}/F-Prime" "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/F-Prime" "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "List of root locations for F Prime modules" FORCE)
 list(REMOVE_DUPLICATES FPRIME_BUILD_LOCATIONS)
 resolve_path_variables(FPRIME_BUILD_LOCATIONS)
 
@@ -68,13 +71,9 @@ include(settings)
 ####
 function(fprime_setup_global_includes)
     # Setup the global include directories that exist outside of the build cache
-    include_directories("${FPRIME_FRAMEWORK_PATH}")
-    include_directories("${FPRIME_PROJECT_ROOT}")
-
-    # Setup the include directories that exist within the build-cache
-    include_directories("${PROJECT_BINARY_DIR}")
-    include_directories("${CMAKE_BINARY_DIR}")
-    include_directories("${CMAKE_BINARY_DIR}/F-Prime")
+    foreach (INCLUDE_DIRECTORU IN LISTS FPRIME_BUILD_LOCATIONS)
+        include_directories("${INCLUDE_DIRECTORU}")
+    endforeach()
 endfunction(fprime_setup_global_includes)
 
 ####

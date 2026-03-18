@@ -8,11 +8,13 @@ include("${CMAKE_CURRENT_LIST_DIR}/FPrime.cmake")
 if (NOT DEFINED FPRIME_FRAMEWORK_PATH)
     set(FPRIME_FRAMEWORK_PATH "${CMAKE_CURRENT_LIST_DIR}/.." )
     get_filename_component(FPRIME_FRAMEWORK_PATH "${FPRIME_FRAMEWORK_PATH}" ABSOLUTE)
+    set(FPRIME_FRAMEWORK_PATH "${FPRIME_FRAMEWORK_PATH}" CACHE PATH "Path to the F Prime framework")
 endif()
 
 # Set the FPRIME_PROJECT_ROOT to the parent directory of this file as an absolute path
 if (NOT DEFINED FPRIME_PROJECT_ROOT)
     get_filename_component(FPRIME_PROJECT_ROOT "${PROJECT_SOURCE_DIR}" ABSOLUTE)
+    set(FPRIME_PROJECT_ROOT "${FPRIME_PROJECT_ROOT}" CACHE PATH "Path to the F Prime project root")
 endif()
 
 # By default the F Prime package will load the codebase. This can be set OFF by setting the variable
