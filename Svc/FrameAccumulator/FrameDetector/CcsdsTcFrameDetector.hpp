@@ -9,6 +9,7 @@
 #include "Fw/FPrimeBasicTypes.hpp"
 #include "Svc/Ccsds/Types/FppConstantsAc.hpp"
 #include "Svc/FrameAccumulator/FrameDetector.hpp"
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 namespace FrameDetectors {

@@ -6,7 +6,7 @@
 #include <Fw/Time/TimeValueSerializableAc.hpp>
 #include <Fw/Types/Assert.hpp>
 #include <Fw/Types/Serializable.hpp>
-#include <config/TimeBaseEnumAc.hpp>
+#include <base_config/TimeBaseEnumAc.hpp>
 
 namespace Fw {
 class Time : public Serializable {

@@ -2,8 +2,7 @@
 # FPP file for configuration of the communications stack
 # ======================================================================
 
-@ The width of packet descriptors when they are serialized by the framework
-dictionary type FwPacketDescriptorType = U16
+# NOTE: FwPacketDescriptorType has been moved to the types definitions in base_config/FpConfig.fpp
 
 module ComCfg {
 

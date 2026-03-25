@@ -8,6 +8,7 @@
 #define Svc_FileDispatcher_HPP
 
 #include "Svc/FileDispatcher/FileDispatcherComponentAc.hpp"
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 

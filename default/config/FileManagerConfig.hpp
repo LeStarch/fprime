@@ -1,7 +1,7 @@
 #ifndef DEFAULT_CONFIG_FILEMANAGERCONFIG_HPP
 #define DEFAULT_CONFIG_FILEMANAGERCONFIG_HPP
 
-#include <config/FpConfig.hpp>
+#include <Fw/FPrimeBasicTypes.hpp>
 
 namespace Svc {
 namespace FileManagerConfig {

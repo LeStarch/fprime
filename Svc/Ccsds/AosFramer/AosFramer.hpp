@@ -15,6 +15,7 @@
 #include "Svc/Ccsds/Types/M_PDUHeaderSerializableAc.hpp"
 #include "Svc/Ccsds/Types/SpacePacketHeaderSerializableAc.hpp"
 #include "Svc/Ccsds/Types/TfvnEnumAc.hpp"
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 

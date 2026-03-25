@@ -9,5 +9,5 @@
  * acknowledged.
  */
 extern "C" {
-#include <config/FpConfig.h>
+#include <base_config/FpConfig.h>
 }

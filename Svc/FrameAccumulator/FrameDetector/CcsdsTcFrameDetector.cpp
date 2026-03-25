@@ -11,7 +11,6 @@
 #include "Svc/Ccsds/Types/TCTrailerSerializableAc.hpp"
 #include "Svc/Ccsds/Utils/CRC16.hpp"
 #include "Utils/Hash/Hash.hpp"
-#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 namespace FrameDetectors {

@@ -9,7 +9,8 @@
 #include "Svc/Ccsds/Types/TCHeaderSerializableAc.hpp"
 #include "Svc/Ccsds/Types/TCTrailerSerializableAc.hpp"
 #include "Svc/Ccsds/Utils/CRC16.hpp"
-#include "config/FpConfig.hpp"
+#include "Fw/FPrimeBasicTypes.hpp"
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 namespace Ccsds {

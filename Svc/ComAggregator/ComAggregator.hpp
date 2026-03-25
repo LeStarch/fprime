@@ -10,6 +10,7 @@
 #include <atomic>
 #include "Os/Mutex.hpp"
 #include "Svc/ComAggregator/ComAggregatorComponentAc.hpp"
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 

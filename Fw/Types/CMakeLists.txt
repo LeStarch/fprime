@@ -18,6 +18,7 @@ register_fprime_module(
     "${CMAKE_CURRENT_LIST_DIR}/Types.fpp"
   DEPENDS
     __fprime_config # Only module that should ever list __fprime_config in DEPENDS. Use Fw_Types instead.
+    default_config
   REQUIRES_IMPLEMENTATIONS
     Fw_StringFormat
     Fw_StringScan

@@ -23,35 +23,35 @@ extern "C" {
 #endif
 #include <Fw/Types/BasicTypes.h>
 #include <Platform/PlatformTypes.h>
-#include <config/FpConfig.h>
+#include <base_config/FpConfig.h>
 
 // ----------------------------------------------------------------------
 // Type aliases defined by FPP
 // ----------------------------------------------------------------------
 
-#include <config/FwAssertArgTypeAliasAc.h>
-#include <config/FwIndexTypeAliasAc.h>
-#include <config/FwQueuePriorityTypeAliasAc.h>
-#include <config/FwSignedSizeTypeAliasAc.h>
-#include <config/FwSizeTypeAliasAc.h>
-#include <config/FwTaskIdTypeAliasAc.h>
-#include <config/FwTaskPriorityTypeAliasAc.h>
+#include <base_config/FwAssertArgTypeAliasAc.h>
+#include <base_config/FwIndexTypeAliasAc.h>
+#include <base_config/FwQueuePriorityTypeAliasAc.h>
+#include <base_config/FwSignedSizeTypeAliasAc.h>
+#include <base_config/FwSizeTypeAliasAc.h>
+#include <base_config/FwTaskIdTypeAliasAc.h>
+#include <base_config/FwTaskPriorityTypeAliasAc.h>
 
-#include <config/FwChanIdTypeAliasAc.h>
-#include <config/FwDpIdTypeAliasAc.h>
-#include <config/FwDpPriorityTypeAliasAc.h>
-#include <config/FwEnumStoreTypeAliasAc.h>
-#include <config/FwEventIdTypeAliasAc.h>
-#include <config/FwIdTypeAliasAc.h>
-#include <config/FwOpcodeTypeAliasAc.h>
-#include <config/FwPacketDescriptorTypeAliasAc.h>
-#include <config/FwPrmIdTypeAliasAc.h>
-#include <config/FwSizeStoreTypeAliasAc.h>
-#include <config/FwSizeTypeAliasAc.h>
-#include <config/FwTimeBaseStoreTypeAliasAc.h>
-#include <config/FwTimeContextStoreTypeAliasAc.h>
-#include <config/FwTlmPacketizeIdTypeAliasAc.h>
-#include <config/FwTraceIdTypeAliasAc.h>
+#include <base_config/FwChanIdTypeAliasAc.h>
+#include <base_config/FwDpIdTypeAliasAc.h>
+#include <base_config/FwDpPriorityTypeAliasAc.h>
+#include <base_config/FwEnumStoreTypeAliasAc.h>
+#include <base_config/FwEventIdTypeAliasAc.h>
+#include <base_config/FwIdTypeAliasAc.h>
+#include <base_config/FwOpcodeTypeAliasAc.h>
+#include <base_config/FwPacketDescriptorTypeAliasAc.h>
+#include <base_config/FwPrmIdTypeAliasAc.h>
+#include <base_config/FwSizeStoreTypeAliasAc.h>
+#include <base_config/FwSizeTypeAliasAc.h>
+#include <base_config/FwTimeBaseStoreTypeAliasAc.h>
+#include <base_config/FwTimeContextStoreTypeAliasAc.h>
+#include <base_config/FwTlmPacketizeIdTypeAliasAc.h>
+#include <base_config/FwTraceIdTypeAliasAc.h>
 
 // Backwards naming compatibility.
 typedef FwSizeStoreType FwBuffSizeType;

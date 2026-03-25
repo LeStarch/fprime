@@ -34,7 +34,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <config/FPrimeNumericalConfig.h>
+#include <base_config/FPrimeNumericalConfig.h>
 #include <inttypes.h>  // Standard integer types and printf macros
 
 // Compiler checks

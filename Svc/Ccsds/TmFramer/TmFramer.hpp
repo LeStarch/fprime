@@ -12,6 +12,7 @@
 #include "Svc/Ccsds/Types/SpacePacketHeaderSerializableAc.hpp"
 #include "Svc/Ccsds/Types/TMHeaderSerializableAc.hpp"
 #include "Svc/Ccsds/Types/TMTrailerSerializableAc.hpp"
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 

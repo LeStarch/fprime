@@ -22,7 +22,7 @@ extern "C" {
 }
 #include <Fw/Types/BasicTypes.hpp>
 // Needed for FwAssertTextSize
-#include <config/FppConstantsAc.hpp>
+#include <base_config/FppConstantsAc.hpp>
 
 // Define max length of assert string
 // Note: This constant truncates file names in assertion failure event reports

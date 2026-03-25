@@ -13,6 +13,7 @@
 #include <Svc/TlmPacketizer/TlmPacketizer.hpp>
 #include <TlmPacketizerConfig/FppConstantsAc.hpp>
 #include <cstring>
+#include "config/FppConstantsAc.hpp"
 
 namespace Svc {
 
