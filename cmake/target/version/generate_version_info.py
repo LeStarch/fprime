@@ -74,7 +74,7 @@ def get_project_version(fallback=FALLBACK_VERSION):
     Return:
         Version of fprime framework
     """
-    fprime_directory = os.environ.get("FPRIME_PROJECT_ROOT", os.path.dirname(__file__))
+    fprime_directory = os.environ.get("FPRIME_GLOBAL_PROJECT_PATH", os.path.dirname(__file__))
     return get_version_str(working_dir=fprime_directory, fallback=fallback)
 
 

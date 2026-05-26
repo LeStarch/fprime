@@ -13,7 +13,7 @@ from . import settings
 
 TOOLCHAIN_NAME = "generic-native"
 
-
+# TODO:mstarch:TODO: this refers to the global project's root, but since it is a faximily of what we detect, is it needed?
 FEATURE_BUILD_RESULT = cmake.get_build(
     "FEATURE_BUILD",
     settings.DATA_DIR / "TestDeployment",

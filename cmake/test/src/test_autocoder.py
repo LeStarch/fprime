@@ -6,6 +6,7 @@ _ = cmake.get_build(
     settings.DATA_DIR / "TestDeployment",
     {
         "FPRIME_FRAMEWORK_PATH": settings.FRAMEWORK_PATH,
+        # TODO:mstarch:TODO: this refers to the global project's root, but since it is a faximily of what we detect, is it needed?
         "FPRIME_PROJECT_ROOT": settings.DATA_DIR,
         "FPRIME_LIBRARY_LOCATIONS": ";".join(
             [

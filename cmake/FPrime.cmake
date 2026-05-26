@@ -19,18 +19,9 @@ include(config_assembler)
 include(fprime-util)
 
 # Add project root's cmake folder to module path
+# TODO:mstarch:TODO: this refers to the GLOBAL project's root....but is it needed in a world where we could just detect if the CMAKE PROJECT refers to such a place?
 if (IS_DIRECTORY "${FPRIME_PROJECT_ROOT}/cmake")
     list(APPEND CMAKE_MODULE_PATH "${FPRIME_PROJECT_ROOT}/cmake")
-endif()
-
-# for adding libraries from the _fprime_packages directory
-if (IS_DIRECTORY "${FPRIME_PROJECT_ROOT}/_fprime_packages")
-    if (EXISTS "${FPRIME_PROJECT_ROOT}/_fprime_packages/packages.cmake")
-        include("${FPRIME_PROJECT_ROOT}/_fprime_packages/packages.cmake")
-        fprime_cmake_status("[FPRIME] Including libraries from ${FPRIME_PROJECT_ROOT}/_fprime_packages")
-    else()
-        message(WARNING "[FPRIME] ${FPRIME_PROJECT_ROOT}/_fprime_packages/packages.cmake does not exist. Skipping.")
-    endif()
 endif()
 
 # Setup fprime library locations
@@ -40,7 +31,9 @@ list(REMOVE_DUPLICATES FPRIME_LIBRARY_LOCATIONS)
 # paths to given files.
 # Now that modules can build within the build cache, the build cache locations (root, F-Prime) are added to the list of
 # locations. This allows for the detection of modules that are built within the build cache.
-# TODO: CMAKE_BINARY_DIR should not be used, however; it is unclear why modules are being placed there.
+# TODO:mstarch:TODO: CMAKE_BINARY_DIR should not be used, however; it is unclear why modules are being placed there.
+
+# TODO:mstarch:TODO: this refers to the global project's root, but since it is a faximily of what we detect, is it needed?
 set(FPRIME_BUILD_LOCATIONS "${FPRIME_FRAMEWORK_PATH}" ${FPRIME_LIBRARY_LOCATIONS} "${FPRIME_PROJECT_ROOT}"
     "${CMAKE_BINARY_DIR}/F-Prime" "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/F-Prime" "${CMAKE_CURRENT_BINARY_DIR}" CACHE INTERNAL "List of root locations for F Prime modules" FORCE)
 list(REMOVE_DUPLICATES FPRIME_BUILD_LOCATIONS)
@@ -71,8 +64,8 @@ include(settings)
 ####
 function(fprime_setup_global_includes)
     # Setup the global include directories that exist outside of the build cache
-    foreach (INCLUDE_DIRECTORU IN LISTS FPRIME_BUILD_LOCATIONS)
-        include_directories("${INCLUDE_DIRECTORU}")
+    foreach (INCLUDE_DIRECTORY IN LISTS FPRIME_BUILD_LOCATIONS)
+        target_include_directories("${FPRIME_GLOBAL_INTERFACE_TARGET}" INTERFACE "${INCLUDE_DIRECTORY}")
     endforeach()
 endfunction(fprime_setup_global_includes)
 

@@ -364,6 +364,7 @@ endfunction(full_path_from_build_relative_path)
 #
 # - **DIRECTORY_PATH:** path to detect nearest build root
 # Return: nearest parent from ${FPRIME_BUILD_LOCATIONS}
+# :TODO:mstarch:TODO: can this be replaced by using the 
 ####
 function(get_nearest_build_root DIRECTORY_PATH)
     get_filename_component(DIRECTORY_PATH "${DIRECTORY_PATH}" ABSOLUTE)
@@ -436,6 +437,7 @@ function(get_expected_tool_version VID FILL_VARIABLE)
     find_program(TOOLS_CHECK NAMES fprime-version-check REQUIRED)
 
     # Try project root as a source
+    # TODO:mstarch:TODO: This refers to the global root project's root.  OR DOES IT.  IT REFERS TO THE LOCATION OF FPRIME.
     set(REQUIREMENT_FILE "${FPRIME_PROJECT_ROOT}/requirements.txt")
     if (EXISTS "${REQUIREMENT_FILE}")
         execute_process(COMMAND "${TOOLS_CHECK}" "${VID}" "${REQUIREMENT_FILE}" OUTPUT_VARIABLE VERSION_TEXT ERROR_VARIABLE ERRORS RESULT_VARIABLE RESULT_OUT OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -468,6 +470,7 @@ function(set_assert_flags SRC)
         get_nearest_build_root("${SRC}") # sets FPRIME_CLOSEST_BUILD_ROOT in current scope
     endif()
     get_filename_component(FPRIME_CLOSEST_BUILD_ROOT_ABS "${FPRIME_CLOSEST_BUILD_ROOT}" ABSOLUTE)
+    # TODO:mstarch:TODO: This refers to the LOCAL project's root.  Perhaps we can even replace the nearest build root with this?
     get_filename_component(FPRIME_PROJECT_ROOT_ABS "${FPRIME_PROJECT_ROOT}" ABSOLUTE)
     string(REPLACE "${FPRIME_CLOSEST_BUILD_ROOT_ABS}/" "" SHORT_SRC "${SRC}")
     string(REPLACE "${FPRIME_PROJECT_ROOT_ABS}/" "" SHORT_SRC "${SHORT_SRC}")

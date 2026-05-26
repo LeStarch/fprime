@@ -7,7 +7,7 @@
 import pytest
 from . import cmake
 from . import settings
-
+# TODO:mstarch:TODO: this refers to the global project's root, but since it is a faximily of what we detect, is it needed?
 _1 = cmake.get_build(
     "CONFIG_BUILD",
     settings.DATA_DIR / "TestConfigDeployment",

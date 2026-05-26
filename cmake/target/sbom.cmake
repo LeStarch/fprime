@@ -21,7 +21,7 @@ function(sbom_add_global_target TARGET)
             # Redirect to cleanly capture standard out
             ${PYTHON} ${FPRIME__INTERNAL_SBOM_REDIRECTOR} "${CMAKE_BINARY_DIR}/${PROJECT_NAME}_sbom.json"
             # syft arguments
-            "${SYFT}" "dir:${FPRIME_PROJECT_ROOT}" -o spdx-json
+            "${SYFT}" "dir:${FPRIME_GLOBAL_PROJECT_PATH}" -o spdx-json
             # Excludes .github paths not in the root of the project as those should not be activated by the project
             --exclude '*/**/.github'
             DEPENDS $<TARGET_PROPERTY:${TARGET},SBOM_DEPENDENCIES>

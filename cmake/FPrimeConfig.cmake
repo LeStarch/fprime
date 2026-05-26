@@ -2,6 +2,7 @@
 if (NOT FPRIME_CMAKE_QUIET)
     message(STATUS "[F Prime] F Prime CMake package found at: ${CMAKE_CURRENT_LIST_FILE}")
 endif()
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 include("${CMAKE_CURRENT_LIST_DIR}/FPrime.cmake")
 
 # Set the FPRIME_FRAMEWORK_PATH to the parent directory of this file as an absolute path
@@ -13,8 +14,12 @@ endif()
 
 # Set the FPRIME_PROJECT_ROOT to the parent directory of this file as an absolute path
 if (NOT DEFINED FPRIME_PROJECT_ROOT)
-    get_filename_component(FPRIME_PROJECT_ROOT "${PROJECT_SOURCE_DIR}" ABSOLUTE)
-    set(FPRIME_PROJECT_ROOT "${FPRIME_PROJECT_ROOT}" CACHE PATH "Path to the F Prime project root")
+    get_filename_component(FPRIME_GLOBAL_PROJECT_PATH "${PROJECT_SOURCE_DIR}" ABSOLUTE)
+    # Except in the case of CFS? Maybe?  Because this is not called by the project, but F Prime (Core) as-a project?
+    set(FPRIME_GLOBAL_PROJECT_PATH "${FPRIME_GLOBAL_PROJECT_PATH}" CACHE PATH "Path to the F Prime project root")
+# When defined, use the FPRIME_PROJECT_ROOT as the FPRIME_GLOBAL_PROJECT_PATH
+else()
+    set(FPRIME_GLOBAL_PROJECT_PATH "${FPRIME_PROJECT_ROOT}" CACHE PATH "Path to the F Prime project root")
 endif()
 
 # By default the F Prime package will load the codebase. This can be set OFF by setting the variable

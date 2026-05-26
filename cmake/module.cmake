@@ -248,7 +248,7 @@ function(fprime__internal_add_build_target_helper TARGET_NAME TYPE SOURCES AUTOC
     target_sources("${TARGET_NAME}" PRIVATE "${FPRIME__INTERNAL_EMPTY_CPP}")
 
     # Add the link libraries safely in both real and INTERFACE libraries
-    fprime_target_dependencies("${TARGET_NAME}" PUBLIC ${DEPENDENCIES} ${REQUIRED_IMPLEMENTATIONS})
+    fprime_target_dependencies("${TARGET_NAME}" PUBLIC ${DEPENDENCIES} ${REQUIRED_IMPLEMENTATIONS} ${FPRIME_GLOBAL_INTERFACE_TARGET})
 
     # Set F Prime target properties
     set_target_properties("${TARGET_NAME}"

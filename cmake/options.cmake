@@ -17,13 +17,11 @@
 #
 ####
 include_guard()
+include(utilities)
 # Remap changed settings
 if (DEFINED FPRIME_INSTALL_DEST)
     set(CMAKE_INSTALL_PREFIX ${FPRIME_INSTALL_DEST} CACHE PATH "Install dir" FORCE)
 endif()
-include("settings/ini")
-ini_to_cache()
-
 
 ####
 # `CMAKE_TOOLCHAIN_FILE:`
@@ -338,49 +336,33 @@ include(CTest)
 # These files are used for settings in fprime-util. If supplied (typically only by fprime-util) then
 # they will be added as dependencies into the build system.
 ####
-get_filename_component(DETECTED_FRAMEWORK_PATH "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 if (DEFINED FPRIME_FRAMEWORK_PATH)
+    fprime_cmake_warning("DEPRECATED: FPRIME_FRAMEWORK_PATH should no longer be set.")
      get_filename_component(FPRIME_FRAMEWORK_PATH "${FPRIME_FRAMEWORK_PATH}" ABSOLUTE)
      # Sanity check the framework path as supplied
      if (NOT FPRIME_FRAMEWORK_PATH STREQUAL DETECTED_FRAMEWORK_PATH)
          message(FATAL_ERROR "Inconsistent FPrime location: ${FPRIME_FRAMEWORK_PATH}. Check settings.ini")
      endif()
 endif()
-# Force framework path to be absolute
-set(FPRIME_FRAMEWORK_PATH "${DETECTED_FRAMEWORK_PATH}" CACHE PATH "F Prime framework location" FORCE)
 
-# Setup project root
-get_filename_component(FULL_PROJECT_PATH "${CMAKE_PROJECT_DIR}" ABSOLUTE)
-file(RELATIVE_PATH TEMP_PATH "${FPRIME_FRAMEWORK_PATH}" "${FULL_PROJECT_PATH}")
 # If defined then force it to be absolute
 if (DEFINED FPRIME_PROJECT_ROOT)
+    fprime_cmake_warning("DEPRECATED: FPRIME_PROJECT_ROOT should no longer be set.")
     get_filename_component(FPRIME_PROJECT_ROOT_ABS "${FPRIME_PROJECT_ROOT}" ABSOLUTE)
     set(FPRIME_PROJECT_ROOT "${FPRIME_PROJECT_ROOT_ABS}" CACHE PATH "F Prime project location" FORCE)
-# Forces framework path as project root, if a child
-elseif( "${TEMP_PATH}" MATCHES "^[^./].*" )
-    set(FPRIME_PROJECT_ROOT "${FPRIME_FRAMEWORK_PATH}" CACHE PATH "F Prime project location" FORCE)
-# Force PROJECT_ROOT
-else()
-    set(FPRIME_PROJECT_ROOT "${FULL_PROJECT_PATH}" CACHE PATH "F Prime project location" FORCE)
 endif()
+
+# If library location is defined, it should be marked as DEPRECATED
+if (DEFINED FPRIME_LIBRARY_LOCATIONS)
+    fprime_cmake_warning("DEPRECATED: FPRIME_LIBRARY_LOCATIONS should no longer be set.")
+endif()
+
 # Force  FPRIME_LIBRARY_LOCATIONS to be absolute
 set(FPRIME_LIBRARY_LOCATIONS_ABS)
 foreach (LIBLOC  ${FPRIME_LIBRARY_LOCATIONS})
     get_filename_component(LIBLOC_ABS "${LIBLOC}" ABSOLUTE)
     list(APPEND FPRIME_LIBRARY_LOCATIONS_ABS "${LIBLOC_ABS}")
 endforeach()
-set(FPRIME_LIBRARY_LOCATIONS "${FPRIME_LIBRARY_LOCATIONS_ABS}" CACHE STRING "F prime library locations" FORCE)
-# Add in addition file dependencies from CMake
-if (DEFINED FPRIME_SETTINGS_FILE)
-    get_filename_component(FPRIME_SETTINGS_FILE  "${FPRIME_SETTINGS_FILE}" ABSOLUTE)
-    set(FPRIME_SETTINGS_FILE "${FPRIME_SETTINGS_FILE}" CACHE PATH "F prime settings file" FORCE)
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${FPRIME_SETTINGS_FILE}")
-endif()
-if (DEFINED FPRIME_ENVIRONMENT_FILE)
-    get_filename_component(FPRIME_ENVIRONMENT_FILE  "${FPRIME_ENVIRONMENT_FILE}" ABSOLUTE)
-    set(FPRIME_ENVIRONMENT_FILE "${FPRIME_ENVIRONMENT_FILE}" CACHE PATH "F prime environment file" FORCE)
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${FPRIME_ENVIRONMENT_FILE}")
-endif()
 
 # Set FPRIME_TOOLCHAIN_NAME when not set by toolchain directly
 if (NOT DEFINED FPRIME_TOOLCHAIN_NAME)

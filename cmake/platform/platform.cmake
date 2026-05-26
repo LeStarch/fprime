@@ -37,6 +37,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${TOOLCHAIN_NAME}")
 set(EXPECTED_PLATFORM_FILE "")
 
 # Loop over locations of platform files in order: project, libraries, then framework
+# TODO:mstarch:TODO: this refers to the GLOBAL project's root, but could be replaced with a loop over build locations or something indicating a list of all projects' roots
 foreach(ROOT ${FPRIME_PROJECT_ROOT};${FPRIME_LIBRARY_LOCATIONS};${FPRIME_FRAMEWORK_PATH} )
     set(EXPECTED_PLATFORM_FILE "${ROOT}/cmake/platform/${FPRIME_PLATFORM}.cmake")
     # Include host machine settings

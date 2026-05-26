@@ -61,7 +61,7 @@ The following excerpt demonstrates how to integrate the [ETL libraries](https://
 # This code can be located in the root project.cmake file if the library is used by multiple modules
 # or directly in the module's CMakeLists.txt if it is only used by that module.
 # Here, the ETL library is a submodule of the current project, under ./lib/etl/
-add_subdirectory("${FPRIME_PROJECT_ROOT}/lib/etl" "${CMAKE_BINARY_DIR}/etl")
+add_subdirectory("${FPRIME_CURRENT_PROJECT_PATH}/lib/etl" "${CMAKE_BINARY_DIR}/etl")
 ```
 
 In the `fprime-examples` repository, this is done in [ExternalLibs/CMakeLists.txt](https://github.com/nasa/fprime-examples/tree/devel/FlightExamples/ExternalLibs/CMakeLists.txt) file. This allows any module within the ExternalLibs module to use the `etl` library.
@@ -151,9 +151,9 @@ register_fprime_module(
   AUTOCODER_INPUTS
     "${CMAKE_CURRENT_LIST_DIR}/OpenSslWrapper.fpp"
   DEPENDS
-    ${FPRIME_PROJECT_ROOT}/lib/openssl/libcrypto.a # Full path to the pre-compiled library file - do not use relative paths here
+    ${FPRIME_CURRENT_PROJECT_PATH}/lib/openssl/libcrypto.a # Full path to the pre-compiled library file - do not use relative paths here
 )
-target_include_directories(${FPRIME_CURRENT_MODULE} PUBLIC "${FPRIME_PROJECT_ROOT}/lib/openssl/include")
+target_include_directories(${FPRIME_CURRENT_MODULE} PUBLIC "${FPRIME_CURRENT_PROJECT_PATH}/lib/openssl/include")
 ```
 
 This assumes that the `libcrypto.a` is available for the targeted architecture in the `lib/openssl/` directory of your F´ project root, and that the necessary header files are in `lib/openssl/include/`.
@@ -233,7 +233,7 @@ The following example demonstrates how to integrate the OpenSSL library using `E
 ```cmake
 
 include(ExternalProject)
-set(OPENSSL_SOURCE_DIR ${FPRIME_PROJECT_ROOT}/lib/openssl)
+set(OPENSSL_SOURCE_DIR ${FPRIME_CURRENT_PROJECT_PATH}/lib/openssl)
 set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/openssl)
 set(OPENSSL_INCLUDE_DIR ${OPENSSL_INSTALL_DIR}/include)
 set(OPENSSL_LIBCRYPTO_LIB ${OPENSSL_INSTALL_DIR}/lib/libcrypto.a)
@@ -310,4 +310,4 @@ It is ultimately up to the project to determine how to best use a library within
 
 ## Common Issues
 
-- `The dependency target "libfoo.a" of target "XYZ" does not exist.` this error can occur when a library file (`libfoo.a`) is specified using a relative path in the `DEPENDS` list of a module. The F´ build system requires absolute paths for library files in the `DEPENDS` list. To fix this, use the full path to the library file, such as `${FPRIME_PROJECT_ROOT}/lib/foo/libfoo.a`.
+- `The dependency target "libfoo.a" of target "XYZ" does not exist.` this error can occur when a library file (`libfoo.a`) is specified using a relative path in the `DEPENDS` list of a module. The F´ build system requires absolute paths for library files in the `DEPENDS` list. To fix this, use the full path to the library file, such as `${FPRIME_CURRENT_PROJECT_PATH}/lib/foo/libfoo.a`.
