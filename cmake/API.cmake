@@ -743,6 +743,7 @@ endfunction()
 # Args: none
 #####
 macro(register_fprime_project)
+    fprime_initialize_build_system() # Make sure the build system is initialized before registering the project
     # Typically it is an error to call register_fprime_project outside the root CMakeLists.txt of a defined `project()`
     if (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         fprime_cmake_warning("register_fprime_project not called in CMakeLists.txt containing a project() declaration")

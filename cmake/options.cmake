@@ -338,11 +338,7 @@ include(CTest)
 ####
 if (DEFINED FPRIME_FRAMEWORK_PATH)
     fprime_cmake_warning("DEPRECATED: FPRIME_FRAMEWORK_PATH should no longer be set.")
-     get_filename_component(FPRIME_FRAMEWORK_PATH "${FPRIME_FRAMEWORK_PATH}" ABSOLUTE)
-     # Sanity check the framework path as supplied
-     if (NOT FPRIME_FRAMEWORK_PATH STREQUAL DETECTED_FRAMEWORK_PATH)
-         message(FATAL_ERROR "Inconsistent FPrime location: ${FPRIME_FRAMEWORK_PATH}. Check settings.ini")
-     endif()
+    get_filename_component(FPRIME_FRAMEWORK_PATH "${FPRIME_FRAMEWORK_PATH}" ABSOLUTE)
 endif()
 
 # If defined then force it to be absolute
