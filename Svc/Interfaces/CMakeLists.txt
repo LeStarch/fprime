@@ -9,8 +9,6 @@ register_fprime_module(
     Svc_Interfaces
   AUTOCODER_INPUTS
     "${CMAKE_CURRENT_LIST_DIR}/BufferAllocation.fpp"
-    "${CMAKE_CURRENT_LIST_DIR}/CcsdsSdlsDecrypt.fpp"
-    "${CMAKE_CURRENT_LIST_DIR}/CcsdsSdlsEncrypt.fpp"
     "${CMAKE_CURRENT_LIST_DIR}/Com.fpp"
     "${CMAKE_CURRENT_LIST_DIR}/Deframer.fpp"
     "${CMAKE_CURRENT_LIST_DIR}/FrameAccumulator.fpp"
