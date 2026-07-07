@@ -11,5 +11,15 @@ module Ccsds {
         output port bufferOut: Fw.BufferSend
     }
 
+    @ Client-side mirror of CcsdsSdlsEncrypt: sends a security association index and
+    @ iv/data buffer for encryption, and receives the returned iv/data buffer
+    interface CcsdsSdlsEncryptClient {
+        @ Port for sending the security association index and iv/data buffer to encrypt
+        output port encryptOut: Svc.Ccsds.CcsdsSdlsEncryption
+
+        @ Port for receiving the returned iv/data buffer
+        sync input port bufferIn: Fw.BufferSend
+    }
+
 }
 }
