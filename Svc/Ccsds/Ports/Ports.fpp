@@ -8,7 +8,7 @@ module Ccsds {
     port ErrorNotify (errorCode: Ccsds.FrameError)
 
     @ Port for performing SDLS (Space Data Link Security) encryption/decryption
-    @ on a buffer containing the initialization vector and data
+    @ on a buffer containing the initialization vector, data, and security trailer
     port CcsdsSdlsEncryption (securityAssociationIndex: U16, ref data: Fw.Buffer)
 
 }
