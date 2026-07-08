@@ -8,7 +8,7 @@ module Ccsds {
         guarded input port encryptIn: Svc.Ccsds.CcsdsSdlsEncryption
 
         @ Port for returning the iv/data buffer
-        output port bufferOut: Fw.BufferSend
+        output port bufferReturnOut: Fw.BufferSend
     }
 
     @ Client-side mirror of CcsdsSdlsEncrypt: sends a security association index and
@@ -18,7 +18,7 @@ module Ccsds {
         output port encryptOut: Svc.Ccsds.CcsdsSdlsEncryption
 
         @ Port for receiving the returned iv/data buffer
-        sync input port bufferIn: Fw.BufferSend
+        sync input port bufferReturnIn: Fw.BufferSend
     }
 
 }
