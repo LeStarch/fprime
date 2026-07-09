@@ -86,18 +86,6 @@ void SdlsFileKeyManagerTester ::testShortFile() {
     ASSERT_EVENTS_KeyReadFailed(0, static_cast<I32>(Os::File::OP_OK), fileSize, keySize);
 }
 
-void SdlsFileKeyManagerTester ::testUnconfigured() {
-    this->clearHistory();
-
-    SdlsKeyBuffer key;
-    const SdlsStatus status = this->invoke_to_keyGet(0, key);
-
-    ASSERT_EQ(status, SdlsStatus::KEY_ERROR);
-    ASSERT_EQ(key.getSize(), 0);
-    ASSERT_EVENTS_SIZE(1);
-    ASSERT_EVENTS_NotConfigured_SIZE(1);
-}
-
 // ----------------------------------------------------------------------
 // Helper functions
 // ----------------------------------------------------------------------

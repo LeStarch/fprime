@@ -7,7 +7,8 @@ The `Svc::Ccsds::SdlsFileKeyManager` component supplies SDLS keys read from a fi
 - `configure(path, keySize)` must be called during topology setup. It asserts that `keySize` is in `(0, MAX_SDLS_KEY_SIZE]`, where `MAX_SDLS_KEY_SIZE` is defined in the `SdlsKeyConfig` configuration module.
 - Key requests arrive on the guarded `keyGet` port carrying a reference to an on-stack `SdlsKeyBuffer` (`Fw::LinearBufferTemplate<MAX_SDLS_KEY_SIZE>`).
 - On each request the component opens the key file, reads exactly `keySize` bytes into the buffer, and returns `SUCCESS`. The file is opened and closed per request, so the key file may be replaced at runtime and no file handle is held open.
-- On any failure — request before configuration, open error, read error, or short read — the component returns `KEY_ERROR` and emits a WARNING_HI event (`NotConfigured` or `KeyReadFailed`, the latter carrying the OS status and byte counts).
+- On any file error — open error, read error, or short read — the component returns `KEY_ERROR` with the buffer length reset to zero, and emits the `KeyReadFailed` WARNING_HI event carrying the OS status and byte counts.
+- A key request before `configure()` has been called asserts (fail early).
 
 ## Port Descriptions
 
@@ -20,7 +21,6 @@ The `Svc::Ccsds::SdlsFileKeyManager` component supplies SDLS keys read from a fi
 | Name | Severity | Description |
 |------|----------|-------------|
 | KeyReadFailed | WARNING_HI | The key file could not be read (open error, read error, or short read); carries the OS status and bytes read/expected. |
-| NotConfigured | WARNING_HI | A key was requested before `configure()` was called. |
 
 ## Requirements
 
@@ -28,8 +28,8 @@ The `Svc::Ccsds::SdlsFileKeyManager` component supplies SDLS keys read from a fi
 |------|-------------|------------|
 | SVC-CCSDS-SDLS-FILE-KEY-MANAGER-001 | The SdlsFileKeyManager shall accept key requests via the `Svc.Ccsds.SdlsKeyInterface` interface (guarded `keyGet`), filling the provided `SdlsKeyBuffer`. | Unit Test |
 | SVC-CCSDS-SDLS-FILE-KEY-MANAGER-002 | Upon a key request, the SdlsFileKeyManager shall read exactly the configured key length from the configured file into the provided buffer and return `SdlsStatus.SUCCESS`. | Unit Test |
-| SVC-CCSDS-SDLS-FILE-KEY-MANAGER-003 | The SdlsFileKeyManager shall return `SdlsStatus.KEY_ERROR` and emit a WARNING_HI event on any file error (open error, read error, or short read) or when unconfigured. | Unit Test |
-| SVC-CCSDS-SDLS-FILE-KEY-MANAGER-004 | The key file path and key length shall be supplied at runtime via `configure()`; the key length shall be in `(0, MAX_SDLS_KEY_SIZE]`. | Unit Test |
+| SVC-CCSDS-SDLS-FILE-KEY-MANAGER-003 | The SdlsFileKeyManager shall return `SdlsStatus.KEY_ERROR` and emit a WARNING_HI event on any file error (open error, read error, or short read). | Unit Test |
+| SVC-CCSDS-SDLS-FILE-KEY-MANAGER-004 | The key file path and key length shall be supplied at runtime via `configure()`; the key length shall be in `(0, MAX_SDLS_KEY_SIZE]`. A key request before configuration shall assert. | Unit Test |
 
 ## See Also
 

@@ -51,9 +51,6 @@ class SdlsFileKeyManagerTester : public SdlsFileKeyManagerGTestBase {
     //! Test a key request against a file shorter than the configured key length
     void testShortFile();
 
-    //! Test a key request before configure() is called
-    void testUnconfigured();
-
   private:
     // ----------------------------------------------------------------------
     // Helper functions

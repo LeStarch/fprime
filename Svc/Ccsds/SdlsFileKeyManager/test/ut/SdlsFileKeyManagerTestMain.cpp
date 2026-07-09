@@ -33,14 +33,6 @@ TEST(SdlsFileKeyManager, ShortFile) {
     tester.testShortFile();
 }
 
-TEST(SdlsFileKeyManager, Unconfigured) {
-    COMMENT("Return KEY_ERROR and emit NotConfigured when a key is requested before configure().");
-    REQUIREMENT("SVC-CCSDS-SDLS-FILE-KEY-MANAGER-003");
-    REQUIREMENT("SVC-CCSDS-SDLS-FILE-KEY-MANAGER-004");
-    SdlsFileKeyManagerTester tester;
-    tester.testUnconfigured();
-}
-
 int main(int argc, char** argv) {
     STest::Random::seed();
     ::testing::InitGoogleTest(&argc, argv);

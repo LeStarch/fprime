@@ -35,24 +35,22 @@ void SdlsFileKeyManager ::configure(const char* path, FwSizeType keySize) {
 // ----------------------------------------------------------------------
 
 Svc::Ccsds::SdlsStatus SdlsFileKeyManager ::keyGet_handler(FwIndexType portNum, Svc::Ccsds::SdlsKeyBuffer& key) {
-    if (!this->m_configured) {
-        this->log_WARNING_HI_NotConfigured();
-        return SdlsStatus::KEY_ERROR;
-    }
+    FW_ASSERT(this->m_configured);
     Os::File file;
     const Os::File::Status openStatus = file.open(this->m_path.toChar(), Os::File::OPEN_READ);
     if (openStatus != Os::File::OP_OK) {
         this->log_WARNING_HI_KeyReadFailed(static_cast<I32>(openStatus), 0, this->m_keySize);
         return SdlsStatus::KEY_ERROR;
     }
-    U8 keyData[SdlsCfg::MAX_SDLS_KEY_SIZE];
     FwSizeType readSize = this->m_keySize;
-    const Os::File::Status readStatus = file.read(keyData, readSize);
+    const Os::File::Status readStatus = file.read(key.getBuffAddr(), readSize);
     if ((readStatus != Os::File::OP_OK) || (readSize != this->m_keySize)) {
         this->log_WARNING_HI_KeyReadFailed(static_cast<I32>(readStatus), readSize, this->m_keySize);
+        const Fw::SerializeStatus resetStatus = key.setBuffLen(0);
+        FW_ASSERT(resetStatus == Fw::FW_SERIALIZE_OK, static_cast<FwAssertArgType>(resetStatus));
         return SdlsStatus::KEY_ERROR;
     }
-    const Fw::SerializeStatus setStatus = key.setBuff(keyData, this->m_keySize);
+    const Fw::SerializeStatus setStatus = key.setBuffLen(this->m_keySize);
     FW_ASSERT(setStatus == Fw::FW_SERIALIZE_OK, static_cast<FwAssertArgType>(setStatus));
     return SdlsStatus::SUCCESS;
 }
