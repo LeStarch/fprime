@@ -6,6 +6,13 @@
 
 #include "ComRetryTester.hpp"
 
+#include "Os/Task.hpp"
+
+namespace {
+const Fw::TimeInterval TEST_TIMEOUT(5, 0);
+const Fw::TimeInterval SETTLE_DELAY(0, 50000);
+}  // namespace
+
 namespace Svc {
 
 // ----------------------------------------------------------------------
@@ -13,15 +20,56 @@ namespace Svc {
 // ----------------------------------------------------------------------
 
 ComRetryTester ::ComRetryTester()
-    : ComRetryGTestBase("ComRetryTester", ComRetryTester::MAX_HISTORY_SIZE), component("ComRetry") {
+    : ComRetryGTestBase("ComRetryTester", ComRetryTester::MAX_HISTORY_SIZE),
+      component("ComRetry"),
+      m_dataOutSeen(0),
+      m_senderDone(0),
+      m_inStatusCall(false),
+      m_dataOutOnStatusThread(0),
+      m_nestedReply(false),
+      m_nestedFailures(0) {
     this->initComponents();
     this->connectPorts();
 }
 
 ComRetryTester ::~ComRetryTester() {}
 
-void ComRetryTester ::configure(U32 num_retries = 1) {
-    component.configure(num_retries);
+void ComRetryTester ::configure(U32 num_retries = 1, bool recover_on_sender_thread) {
+    component.configure(num_retries, recover_on_sender_thread);
+}
+
+void ComRetryTester ::from_dataOut_handler(FwIndexType portNum, Fw::Buffer& data, const ComCfg::FrameContext& context) {
+    if (this->m_inStatusCall) {
+        this->m_dataOutOnStatusThread++;
+    }
+    this->pushFromPortEntry_dataOut(data, context);
+    if (this->m_nestedReply) {
+        // Emulate a passive adapter answering synchronously from inside dataOut
+        Fw::Success status = Fw::Success::SUCCESS;
+        if (this->m_nestedFailures > 0) {
+            this->m_nestedFailures--;
+            status = Fw::Success::FAILURE;
+        }
+        this->invoke_to_dataReturnIn(0, data, context);
+        this->invoke_to_comStatusIn(0, status);
+    }
+    (void)this->m_dataOutSeen.post();
+}
+
+void ComRetryTester ::senderTask(void* argument) {
+    ComRetryTester* tester = static_cast<ComRetryTester*>(argument);
+    tester->invoke_to_dataIn(0, tester->m_senderBuffer, tester->m_senderContext);
+    (void)tester->m_senderDone.post();
+}
+
+void ComRetryTester ::deliverStatus(Fw::Success status) {
+    this->m_inStatusCall = true;
+    this->invoke_to_comStatusIn(0, status);
+    this->m_inStatusCall = false;
+}
+
+bool ComRetryTester ::awaitDataOut() {
+    return this->m_dataOutSeen.waitTimeout(TEST_TIMEOUT) == Os::CountingSemaphore::Status::OP_OK;
 }
 
 void ComRetryTester ::receiveBuffer(Fw::Buffer& buffer, ComCfg::FrameContext& context) {
@@ -133,6 +181,98 @@ void ComRetryTester ::testBufferRetryTillFailure() {
     ASSERT_from_dataReturnOut(1, buffer_b, nullContext);
     ASSERT_from_comStatusOut(1, success);
     checkDataOut(num_retries + 1, buffer_b.getData(), buffer_b.getSize());
+}
+
+void ComRetryTester ::testRecoverOnSenderThread() {
+    U8 data_a[BUFFER_LENGTH] = DATA_A;
+    this->m_senderBuffer = Fw::Buffer(&data_a[0], sizeof(data_a));
+    configure(3, true);
+
+    Os::Task sender;
+    Os::Task::Arguments arguments(Fw::String("ComRetrySender"), ComRetryTester::senderTask, this);
+    ASSERT_EQ(Os::Task::Status::OP_OK, sender.start(arguments));
+
+    // Initial delivery is issued by the sender task and fails
+    ASSERT_TRUE(awaitDataOut());
+    invoke_to_dataReturnIn(0, this->m_senderBuffer, this->m_senderContext);
+    deliverStatus(Fw::Success::FAILURE);
+
+    // Sender remains blocked while waiting for recovery
+    ASSERT_EQ(Os::CountingSemaphore::Status::ERROR_TIMEOUT, this->m_senderDone.waitTimeout(SETTLE_DELAY));
+    ASSERT_EQ(1, this->fromPortHistory_dataOut->size());
+
+    // Recovery SUCCESS from this thread must not resend inline; the resend comes from the sender task
+    deliverStatus(Fw::Success::SUCCESS);
+    ASSERT_TRUE(awaitDataOut());
+    ASSERT_EQ(0, this->m_dataOutOnStatusThread);
+    ASSERT_EQ(2, this->fromPortHistory_dataOut->size());
+    ASSERT_EQ(Os::CountingSemaphore::Status::ERROR_TIMEOUT, this->m_senderDone.waitTimeout(SETTLE_DELAY));
+
+    // Redelivery succeeds and releases the sender
+    invoke_to_dataReturnIn(0, this->m_senderBuffer, this->m_senderContext);
+    deliverStatus(Fw::Success::SUCCESS);
+    ASSERT_EQ(Os::CountingSemaphore::Status::OP_OK, this->m_senderDone.waitTimeout(TEST_TIMEOUT));
+    ASSERT_EQ(Os::Task::Status::OP_OK, sender.join());
+
+    ASSERT_from_dataReturnOut(0, this->m_senderBuffer, this->m_senderContext);
+    ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::SUCCESS));
+    checkDataOut(0, data_a, sizeof(data_a));
+    checkDataOut(1, data_a, sizeof(data_a));
+}
+
+void ComRetryTester ::testRecoverOnSenderThreadTillFailure() {
+    U8 data_a[BUFFER_LENGTH] = DATA_A;
+    this->m_senderBuffer = Fw::Buffer(&data_a[0], sizeof(data_a));
+    const U32 num_retries = 2;
+    configure(num_retries, true);
+
+    Os::Task sender;
+    Os::Task::Arguments arguments(Fw::String("ComRetrySender"), ComRetryTester::senderTask, this);
+    ASSERT_EQ(Os::Task::Status::OP_OK, sender.start(arguments));
+
+    ASSERT_TRUE(awaitDataOut());
+    invoke_to_dataReturnIn(0, this->m_senderBuffer, this->m_senderContext);
+    deliverStatus(Fw::Success::FAILURE);
+    for (U32 i = 0; i < num_retries; i++) {
+        deliverStatus(Fw::Success::SUCCESS);
+        ASSERT_TRUE(awaitDataOut());
+        invoke_to_dataReturnIn(0, this->m_senderBuffer, this->m_senderContext);
+        deliverStatus(Fw::Success::FAILURE);
+    }
+    ASSERT_EQ(Os::CountingSemaphore::Status::OP_OK, this->m_senderDone.waitTimeout(TEST_TIMEOUT));
+    ASSERT_EQ(Os::Task::Status::OP_OK, sender.join());
+
+    ASSERT_EQ(0, this->m_dataOutOnStatusThread);
+    ASSERT_EQ(num_retries + 1, this->fromPortHistory_dataOut->size());
+    ASSERT_from_dataReturnOut(0, this->m_senderBuffer, this->m_senderContext);
+    ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::FAILURE));
+}
+
+void ComRetryTester ::testRecoverOnSenderThreadNested() {
+    U8 data_a[BUFFER_LENGTH] = DATA_A;
+    this->m_senderBuffer = Fw::Buffer(&data_a[0], sizeof(data_a));
+    this->m_nestedReply = true;
+    this->m_nestedFailures = 1;
+    configure(3, true);
+
+    Os::Task sender;
+    Os::Task::Arguments arguments(Fw::String("ComRetrySender"), ComRetryTester::senderTask, this);
+    ASSERT_EQ(Os::Task::Status::OP_OK, sender.start(arguments));
+
+    // First attempt is refused synchronously (adapter busy); sender blocks awaiting recovery
+    ASSERT_TRUE(awaitDataOut());
+    ASSERT_EQ(Os::CountingSemaphore::Status::ERROR_TIMEOUT, this->m_senderDone.waitTimeout(SETTLE_DELAY));
+
+    // Recovery from this thread; the resend is answered synchronously with SUCCESS on the sender thread
+    deliverStatus(Fw::Success::SUCCESS);
+    ASSERT_TRUE(awaitDataOut());
+    ASSERT_EQ(Os::CountingSemaphore::Status::OP_OK, this->m_senderDone.waitTimeout(TEST_TIMEOUT));
+    ASSERT_EQ(Os::Task::Status::OP_OK, sender.join());
+
+    ASSERT_EQ(0, this->m_dataOutOnStatusThread);
+    ASSERT_EQ(2, this->fromPortHistory_dataOut->size());
+    ASSERT_from_dataReturnOut(0, this->m_senderBuffer, this->m_senderContext);
+    ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::SUCCESS));
 }
 
 }  // namespace Svc

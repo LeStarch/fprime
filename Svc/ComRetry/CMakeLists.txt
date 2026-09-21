@@ -18,6 +18,7 @@ register_fprime_library(
     DEPENDS
         Fw_Types
         Fw_Buffer
+        Os
 )
 
 ### UTs ###
