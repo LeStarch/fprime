@@ -26,6 +26,11 @@ TEST(Nominal, RetryTillFailure) {
     tester.testBufferRetryTillFailure();
 }
 
+TEST(Nominal, NestedStatus) {
+    Svc::ComRetryTester tester;
+    tester.testNestedStatusDefaultMode();
+}
+
 TEST(RecoverOnSenderThread, Retry) {
     Svc::ComRetryTester tester;
     tester.testRecoverOnSenderThread();

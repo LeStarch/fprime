@@ -72,7 +72,7 @@ class ComRetry final : public ComRetryComponentBase {
     //! Issue a resend of the stored buffer; mutex must not be held
     void resend();
 
-    //! Return the stored buffer upstream and forward the final status; mutex must not be held
+    //! Return the stored buffer upstream and forward the final status; called with the mutex held, releases it
     void finish(Fw::Success& condition);
 
   private:

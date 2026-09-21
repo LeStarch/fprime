@@ -71,6 +71,9 @@ class ComRetryTester final : public ComRetryGTestBase {
     //! Nested synchronous statuses from inside dataOut complete without blocking
     void testRecoverOnSenderThreadNested();
 
+    //! Default mode: nested synchronous FAILURE then inline resend on the recovery SUCCESS
+    void testNestedStatusDefaultMode();
+
   private:
     // ----------------------------------------------------------------------
     // Handler overrides

@@ -58,6 +58,10 @@ void ComRetry ::comStatusIn_handler(FwIndexType portNum, Fw::Success& condition)
             this->m_mutex.unlock();
             this->resend();
         }
+    }
+    // Duplicate recovery while the blocked dataIn thread is already armed to resend: nothing to do
+    else if ((this->m_retry_state == RESEND_READY) && (condition == Fw::Success::SUCCESS)) {
+        this->m_mutex.unlock();
     } else {
         // When a failure has been seen, it can **only** be in WAITING_FOR_STATUS state
         FW_ASSERT(this->m_retry_state == WAITING_FOR_STATUS);

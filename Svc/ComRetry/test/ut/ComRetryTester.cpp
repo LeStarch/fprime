@@ -215,6 +215,8 @@ void ComRetryTester ::testRecoverOnSenderThread() {
     ASSERT_EQ(Os::CountingSemaphore::Status::OP_OK, this->m_senderDone.waitTimeout(TEST_TIMEOUT));
     ASSERT_EQ(Os::Task::Status::OP_OK, sender.join());
 
+    ASSERT_from_dataReturnOut_SIZE(1);
+    ASSERT_from_comStatusOut_SIZE(1);
     ASSERT_from_dataReturnOut(0, this->m_senderBuffer, this->m_senderContext);
     ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::SUCCESS));
     checkDataOut(0, data_a, sizeof(data_a));
@@ -245,6 +247,11 @@ void ComRetryTester ::testRecoverOnSenderThreadTillFailure() {
 
     ASSERT_EQ(0, this->m_dataOutOnStatusThread);
     ASSERT_EQ(num_retries + 1, this->fromPortHistory_dataOut->size());
+    for (FwIndexType i = 0; i < static_cast<FwIndexType>(num_retries + 1); i++) {
+        checkDataOut(i, data_a, sizeof(data_a));
+    }
+    ASSERT_from_dataReturnOut_SIZE(1);
+    ASSERT_from_comStatusOut_SIZE(1);
     ASSERT_from_dataReturnOut(0, this->m_senderBuffer, this->m_senderContext);
     ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::FAILURE));
 }
@@ -272,7 +279,37 @@ void ComRetryTester ::testRecoverOnSenderThreadNested() {
 
     ASSERT_EQ(0, this->m_dataOutOnStatusThread);
     ASSERT_EQ(2, this->fromPortHistory_dataOut->size());
+    checkDataOut(0, data_a, sizeof(data_a));
+    checkDataOut(1, data_a, sizeof(data_a));
+    ASSERT_from_dataReturnOut_SIZE(1);
+    ASSERT_from_comStatusOut_SIZE(1);
     ASSERT_from_dataReturnOut(0, this->m_senderBuffer, this->m_senderContext);
+    ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::SUCCESS));
+}
+
+void ComRetryTester ::testNestedStatusDefaultMode() {
+    U8 data_a[BUFFER_LENGTH] = DATA_A;
+    Fw::Buffer buffer_a(&data_a[0], sizeof(data_a));
+    ComCfg::FrameContext nullContext;
+    this->m_nestedReply = true;
+    this->m_nestedFailures = 1;
+    configure(3);
+
+    // First attempt refused synchronously from inside dataOut; the buffer is retained
+    invoke_to_dataIn(0, buffer_a, nullContext);
+    ASSERT_EQ(1, this->fromPortHistory_dataOut->size());
+    ASSERT_from_dataReturnOut_SIZE(0);
+    ASSERT_from_comStatusOut_SIZE(0);
+
+    // Recovery SUCCESS resends inline in default mode; the resend is answered synchronously with SUCCESS
+    deliverStatus(Fw::Success::SUCCESS);
+    ASSERT_EQ(2, this->fromPortHistory_dataOut->size());
+    ASSERT_EQ(1, this->m_dataOutOnStatusThread);
+    checkDataOut(0, data_a, sizeof(data_a));
+    checkDataOut(1, data_a, sizeof(data_a));
+    ASSERT_from_dataReturnOut_SIZE(1);
+    ASSERT_from_comStatusOut_SIZE(1);
+    ASSERT_from_dataReturnOut(0, buffer_a, nullContext);
     ASSERT_from_comStatusOut(0, Fw::Success(Fw::Success::SUCCESS));
 }
 

@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The `Svc::ComRetry` component forwards messages from upstream to downstream components, resending messages on failure. Any topology requiring retry capabilities must place this component in the pipeline before a `ComStub` or `Radio` component. This component expects a `ComStatus` response per the [Communication Adapter Protocol](../../../docs/reference/communication-adapter-interface.md#communication-adapter-protocol). It acts as a pass-through component in case of a successful delivery, i.e. when it receives `Fw::Success::SUCCESS`. On receiving `Fw::Success::FAILURE`, it resends the message until it exceeds the maximum number of retries. After all retries are exhausted, it emits `Fw::Success::FAILURE` upstream, and the downstream communication adapter is responsible for eventually emitting a recovery `Fw::Success::SUCCESS` to resume data flow.
+The `Svc::ComRetry` component forwards messages from upstream to downstream components, resending messages on failure. Any topology requiring retry capabilities must place this component in the pipeline before a `ComStub` or `Radio` component. This component expects a `ComStatus` response per the [Communication Adapter Protocol](../../../docs/reference/communication-adapter-interface.md#communication-adapter-protocol). It acts as a pass-through component in case of a successful delivery, i.e. when it receives `Fw::Success::SUCCESS`. On receiving `Fw::Success::FAILURE`, it holds the message and resends it when the adapter's recovery `Fw::Success::SUCCESS` arrives, until it exceeds the maximum number of retries. After all retries are exhausted, it emits `Fw::Success::FAILURE` upstream, and the downstream communication adapter is responsible for eventually emitting a recovery `Fw::Success::SUCCESS` to resume data flow.
 
 `Svc::ComRetry` can be used alongside the other F´ communication components (`Svc::Framer`, `Svc::Deframer`, `Svc::ComQueue`).
 
@@ -78,8 +78,10 @@ Properties of this mode:
 - Every `dataOut` invocation — the first attempt and every resend — happens on the `dataIn` caller's thread.
   `comStatusIn_handler` never invokes `dataOut` in this mode; it only updates state and calls `notify()`.
 - `dataIn` blocks until the buffer is delivered (`SUCCESS`) or retries are exhausted (`FAILURE`). This is
-  consistent with the Communication Queue Protocol: `Svc::ComQueue` does not send again until it receives a
-  status, so holding its thread costs nothing.
+  consistent with the Communication Queue Protocol: `Svc::ComQueue` would not send again until a status arrives
+  anyway. Note that while `dataIn` blocks, the caller's message queue (for `Svc::ComQueue`: `comPacketQueueIn`,
+  `bufferQueueIn`, `run`) continues to fill, so its queue depth and overflow behavior apply for the duration of the
+  wait.
 - The wait is unbounded by design. The Communication Adapter Protocol requires the adapter that emitted `FAILURE`
   to eventually emit a recovery `SUCCESS`; the retry does not second-guess the adapter with a timeout.
 - The mutex is never held across an output port call, so adapters may answer synchronously (nested inside
