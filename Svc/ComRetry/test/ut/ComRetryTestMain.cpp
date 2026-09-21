@@ -26,6 +26,26 @@ TEST(Nominal, RetryTillFailure) {
     tester.testBufferRetryTillFailure();
 }
 
+TEST(Nominal, NestedStatus) {
+    Svc::ComRetryTester tester;
+    tester.testNestedStatusDefaultMode();
+}
+
+TEST(RecoverOnSenderThread, Retry) {
+    Svc::ComRetryTester tester;
+    tester.testRecoverOnSenderThread();
+}
+
+TEST(RecoverOnSenderThread, RetryTillFailure) {
+    Svc::ComRetryTester tester;
+    tester.testRecoverOnSenderThreadTillFailure();
+}
+
+TEST(RecoverOnSenderThread, NestedStatus) {
+    Svc::ComRetryTester tester;
+    tester.testRecoverOnSenderThreadNested();
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
