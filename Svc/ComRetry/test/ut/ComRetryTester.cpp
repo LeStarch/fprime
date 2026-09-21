@@ -11,6 +11,8 @@
 namespace {
 const Fw::TimeInterval TEST_TIMEOUT(5, 0);
 const Fw::TimeInterval SETTLE_DELAY(0, 50000);
+//! True on the thread currently inside a deliverStatus() call
+thread_local bool t_inStatusCall = false;
 }  // namespace
 
 namespace Svc {
@@ -24,7 +26,6 @@ ComRetryTester ::ComRetryTester()
       component("ComRetry"),
       m_dataOutSeen(0),
       m_senderDone(0),
-      m_inStatusCall(false),
       m_dataOutOnStatusThread(0),
       m_nestedReply(false),
       m_nestedFailures(0) {
@@ -39,7 +40,7 @@ void ComRetryTester ::configure(U32 num_retries = 1, bool recover_on_sender_thre
 }
 
 void ComRetryTester ::from_dataOut_handler(FwIndexType portNum, Fw::Buffer& data, const ComCfg::FrameContext& context) {
-    if (this->m_inStatusCall) {
+    if (t_inStatusCall) {
         this->m_dataOutOnStatusThread++;
     }
     this->pushFromPortEntry_dataOut(data, context);
@@ -63,9 +64,9 @@ void ComRetryTester ::senderTask(void* argument) {
 }
 
 void ComRetryTester ::deliverStatus(Fw::Success status) {
-    this->m_inStatusCall = true;
+    t_inStatusCall = true;
     this->invoke_to_comStatusIn(0, status);
-    this->m_inStatusCall = false;
+    t_inStatusCall = false;
 }
 
 bool ComRetryTester ::awaitDataOut() {

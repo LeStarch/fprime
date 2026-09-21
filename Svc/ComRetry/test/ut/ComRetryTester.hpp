@@ -111,7 +111,6 @@ class ComRetryTester final : public ComRetryGTestBase {
     ComCfg::FrameContext m_senderContext;  //!< Context delivered by the sender task
     Os::CountingSemaphore m_dataOutSeen;   //!< Posted on every dataOut
     Os::CountingSemaphore m_senderDone;    //!< Posted when the sender task's dataIn returns
-    bool m_inStatusCall;                   //!< True while the test thread is inside comStatusIn
     U32 m_dataOutOnStatusThread;           //!< Count of dataOut emitted from within comStatusIn
     bool m_nestedReply;                    //!< Reply FAILURE-then-SUCCESS synchronously from dataOut
     U32 m_nestedFailures;                  //!< Remaining synchronous FAILURE replies
