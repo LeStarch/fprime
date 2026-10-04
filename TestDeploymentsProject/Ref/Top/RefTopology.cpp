@@ -23,7 +23,8 @@ using namespace Ref;
 // Size of the buffer each command sequencer loads sequences into
 static constexpr FwSizeType SEQUENCER_BUFFER_SIZE = 5 * 1024;
 // Directory holding fault response sequences (<directory>/<step name>.seq); separate from the uplink sandbox so that
-// uplinked files cannot replace a fault response
+// uplinked files cannot replace a fault response. A flight deployment uses a directory only it can write; this demo
+// path is world-shared, like the Ref's other /tmp paths.
 // Kept short: CmdSequencer bounds "<directory>/<step>.seq" to FW_CMD_STRING_MAX_SIZE (40) characters
 static const char* const FAULT_SEQUENCE_DIRECTORY = "/tmp/fp-seq";
 // Interval the asserting thread is parked after a FATAL before the abort fallback; covers the response countdown

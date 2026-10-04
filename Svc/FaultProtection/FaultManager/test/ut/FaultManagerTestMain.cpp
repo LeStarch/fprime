@@ -143,6 +143,31 @@ TEST(OffNominal, ResponseFailureNoRecursion) {
     tester.testResponseFailureNoRecursion();
 }
 
+TEST(Nominal, ParameterSave) {
+    COMMENT("PRM_SAVE of the never-set RESPONSE_TABLE and STEP_TABLE persists the active tables");
+    Svc::FaultProtection::FaultManagerTester tester;
+    tester.testParameterSave();
+}
+
+TEST(OffNominal, ReportDroppedFromQueue) {
+    COMMENT("A report whose internal message is dropped from a full queue is still responded to");
+    FaultManagerTester tester;
+    tester.testReportDroppedFromQueue();
+}
+
+TEST(OffNominal, PreemptionAfterDroppedReport) {
+    COMMENT("A higher-precedence report whose internal message is dropped still preempts on the next tick");
+    REQUIREMENT("SVC-FAULTMANAGER-016");
+    FaultManagerTester tester;
+    tester.testPreemptionAfterDroppedReport();
+}
+
+TEST(OffNominal, DisabledReportDroppedFromQueue) {
+    COMMENT("A disabled fault's report whose internal message is dropped is discarded on the next tick");
+    FaultManagerTester tester;
+    tester.testDisabledReportDroppedFromQueue();
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -56,4 +56,5 @@ deployment dictionary and placed at `<directory>/<step name>.seq`. Note that `Sv
 in an `Fw::CmdStringArg` (`FW_CMD_STRING_MAX_SIZE`, 40 by default), so the directory must be short enough for the
 longest step name to fit; a longer path is silently truncated by the sequencer and reported as `CS_FileNotFound`. Deployments should dedicate a sequencer (e.g. a
 second `Svc.CmdSequencer`) to fault responses so that ground sequences cannot block a response; see the Ref
-deployment's `fpSeq`.
+deployment's `fpSeq`. That sequencer remains commandable from the ground (`CS_RUN`, `CS_CANCEL`, ...); operating it
+by hand during a response fails the response's step, so it should be reserved for fault responses.

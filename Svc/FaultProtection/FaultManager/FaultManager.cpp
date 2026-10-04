@@ -52,7 +52,7 @@ void FaultManager ::escalationExhausted(const FaultConfig::Response& response) {
 void FaultManager ::reportIn_handler(FwIndexType portNum, const FaultConfig::Fault& id) {
     // Fault reports may originate from any component: never assert on their contents
     if (not FaultManager::isConfiguredFault(id)) {
-        this->log_WARNING_HI_FaultInvalid(static_cast<U8>(id.e));
+        this->handleInvalidReport_internalInterfaceInvoke(static_cast<U8>(id.e));
         return;
     }
     // Latch the report synchronously such that it cannot be lost to a full queue. All other processing (events,
@@ -103,10 +103,12 @@ void FaultManager ::handleReport_internalInterfaceHandler(const FaultConfig::Fau
     const bool enabled = (fault_index != NO_ACTIVE_INDEX) &&
                          (this->m_fault_parameter[fault_index].get_enabled() == Fw::Enabled::ENABLED);
     if (not enabled) {
-        this->m_sm_state.latched_fault_reports[fault.e] = false;
-        this->log_WARNING_LO_FaultDisabled(fault);
-        this->m_faults_ignored++;
-        this->writeTelemetry();
+        // The tick audit may already have discarded this report: announce it once
+        if (this->m_sm_state.latched_fault_reports[fault.e].exchange(false)) {
+            this->log_WARNING_LO_FaultDisabled(fault);
+            this->m_faults_ignored++;
+            this->writeTelemetry();
+        }
         return;
     }
     this->log_ACTIVITY_HI_FaultReported(fault);
@@ -120,10 +122,13 @@ void FaultManager ::handleReport_internalInterfaceHandler(const FaultConfig::Fau
     if (responding) {
         const U8 active_precedence = this->m_fault_parameter[this->m_sm_state.active_fault_index].get_precedence();
         if (this->m_fault_parameter[fault_index].get_precedence() > active_precedence) {
-            this->m_sm_state.preempted_by = fault;
-            this->faultManagerStateMachine_sendSignal_Preempt();
+            this->preempt(fault);
         }
     }
+}
+
+void FaultManager ::handleInvalidReport_internalInterfaceHandler(U8 rawId) {
+    this->log_WARNING_HI_FaultInvalid(rawId);
 }
 
 // ----------------------------------------------------------------------
@@ -202,7 +207,8 @@ Fw::SerializeStatus FaultManager ::deserializeParam(const FwPrmIdType base_id,
         case PARAMID_RESPONSE_TABLE: {
             ResponsesEnabled table;
             status = table.deserializeFrom(buff);
-            // No model default: when nothing valid is stored, the construction-time table remains in force
+            // The model default (all enabled) equals the construction-time table and only serves to make the
+            // parameter valid for PRM_SAVE: only a stored (VALID) table is applied
             if ((status == Fw::FW_SERIALIZE_OK) && (prmStat == Fw::ParamValid::VALID)) {
                 this->m_response_parameter = table;
             }
@@ -211,8 +217,8 @@ Fw::SerializeStatus FaultManager ::deserializeParam(const FwPrmIdType base_id,
         case PARAMID_STEP_TABLE: {
             StepFailureModes table;
             status = table.deserializeFrom(buff);
-            // The parameter has no model default: when nothing is stored, the step definition table (loaded at
-            // construction) remains in force
+            // The model default only makes the parameter valid for PRM_SAVE: when nothing is stored, the step
+            // definition table (loaded at construction) remains in force
             if ((status == Fw::FW_SERIALIZE_OK) && (prmStat == Fw::ParamValid::VALID)) {
                 this->m_step_parameter = table;
             }
@@ -340,6 +346,7 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_complete
     this->m_sm_state.active_step = FaultConfig::Step::SKIP;
     this->m_sm_state.step_timeout = 0;
     this->m_sm_state.response_result = Fw::Success::SUCCESS;
+    this->m_sm_state.preempt_pending = false;
 }
 
 void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_dispatchStep(
@@ -384,10 +391,45 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_dispatch
             this->log_WARNING_HI_StepPortUnconnected(step, port);
         }
     } else {
-        Fw::Logger::log("[CRITICAL] FaultManager: step %d has no step definition entry\n", step.e);
+        Fw::Logger::log("[CRITICAL] FaultManager: step %d has no step definition entry\n", static_cast<int>(step.e));
     }
     if (not dispatched) {
         this->handleStepResult(Fw::Success::FAILURE);
+    }
+}
+
+void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_auditLatches(
+    SmId smId,
+    Svc_FaultProtection_FaultManagerStateMachine::Signal signal) {
+    const bool responding = (this->faultManagerStateMachine_getState() ==
+                             Svc_FaultProtection_FaultManagerStateMachine::State::RESPONSE_DISPATCH_STEP) &&
+                            (this->m_sm_state.active_fault_index != NO_ACTIVE_INDEX);
+    const U8 active_precedence =
+        responding ? this->m_fault_parameter[this->m_sm_state.active_fault_index].get_precedence() : 0;
+    bool found = false;
+    U8 best_precedence = 0;
+    FaultConfig::Fault best = FaultConfig::Fault::NUM_FAULTS;
+    for (FwSizeType i = 0; i < FaultResponseTable::SIZE; i++) {
+        const FaultResponseEntry& entry = this->m_fault_parameter[i];
+        const FaultConfig::Fault fault = entry.get_fault();
+        if ((not FaultManager::isConfiguredFault(fault)) || (not this->m_sm_state.latched_fault_reports[fault.e])) {
+            continue;
+        }
+        if (entry.get_enabled() != Fw::Enabled::ENABLED) {
+            // Its handleReport message was dropped: discard the report as the handler would have
+            this->m_sm_state.latched_fault_reports[fault.e] = false;
+            this->log_WARNING_LO_FaultDisabled(fault);
+            this->m_faults_ignored++;
+            this->writeTelemetry();
+        } else if (responding && (entry.get_precedence() > active_precedence) &&
+                   ((not found) || (entry.get_precedence() > best_precedence))) {
+            found = true;
+            best_precedence = entry.get_precedence();
+            best = fault;
+        }
+    }
+    if (found) {
+        this->preempt(best);
     }
 }
 
@@ -395,7 +437,8 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_tickStep
     SmId smId,
     Svc_FaultProtection_FaultManagerStateMachine::Signal signal) {
     const FaultConfig::Step step = this->m_sm_state.active_step;
-    if ((step == FaultConfig::Step::SKIP) || (this->m_sm_state.step_timeout == 0)) {
+    // A pending Preempt ends the response: do not also fail the step on timeout
+    if ((step == FaultConfig::Step::SKIP) || (this->m_sm_state.step_timeout == 0) || this->m_sm_state.preempt_pending) {
         return;
     }
     this->m_sm_state.step_timeout--;
@@ -427,6 +470,12 @@ bool FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_guard_hasReport
     return false;
 }
 
+bool FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_guard_countdownConfigured(
+    SmId smId,
+    Svc_FaultProtection_FaultManagerStateMachine::Signal signal) const {
+    return FaultConfig::RESPONSE_COUNTDOWN_TICKS > 0;
+}
+
 bool FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_guard_countdownExpired(
     SmId smId,
     Svc_FaultProtection_FaultManagerStateMachine::Signal signal) const {
@@ -448,6 +497,14 @@ bool FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_guard_responseD
 // ----------------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------------
+
+void FaultManager ::preempt(const FaultConfig::Fault& fault) {
+    if (not this->m_sm_state.preempt_pending) {
+        this->m_sm_state.preempt_pending = true;
+        this->m_sm_state.preempted_by = fault;
+        this->faultManagerStateMachine_sendSignal_Preempt();
+    }
+}
 
 void FaultManager ::handleStepResult(const Fw::Success& status) {
     const FaultConfig::Step step = this->m_sm_state.active_step;

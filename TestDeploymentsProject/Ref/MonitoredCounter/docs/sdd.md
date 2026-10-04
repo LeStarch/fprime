@@ -17,7 +17,8 @@ Demonstration of the fault protection monitor pattern: counts rate group cycles,
 
 ## 2. Design
 
-`MonitoredCounter` is an `active` component on the 1 Hz rate group. Each cycle increments `Count` and sends the
+`MonitoredCounter` is an `active` component on the 1 Hz rate group, so that the demonstration shows a monitor
+running on its own thread; a `queued` component dispatching its queue from `run` would serve the demo equally. Each cycle increments `Count` and sends the
 `cycle` signal to its `MonitorMachine` instance, which evaluates the monitor on the component's thread:
 
 - precondition (`SET_MONITORING` enabled) false → BLACK; monitoring starts DISABLED so that a deployment can enable
@@ -44,7 +45,8 @@ continuous demonstration of fault → response → correction visible in events 
 ## 3. Running the demonstration
 
 Compile the response sequences against the deployment dictionary into the directory configured in
-`RefTopology.cpp` (`/tmp/fp-seq`, separate from the file-uplink directory):
+`RefTopology.cpp` (`/tmp/fp-seq`, separate from the file-uplink directory; world-shared like the Ref's other `/tmp`
+paths, whereas a flight deployment would use a directory only it can write):
 
 ```
 fprime-seqgen --dictionary <dict> Ref/sequences/RESET_COUNT_SEQUENCE.seq /tmp/fp-seq/RESET_COUNT_SEQUENCE.seq

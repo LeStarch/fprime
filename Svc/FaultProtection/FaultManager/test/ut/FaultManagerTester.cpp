@@ -113,10 +113,12 @@ void FaultManagerTester ::testDuplicateReportIgnored() {
 void FaultManagerTester ::testInvalidReport() {
     const FaultConfig::Fault invalid(static_cast<FaultConfig::Fault::T>(FaultConfig::Fault::NUM_FAULTS));
     this->invoke_to_reportIn(0, invalid);
+    // Only the diagnostic is queued for the component thread; nothing is latched
+    ASSERT_EVENTS_FaultInvalid_SIZE(0);
+    ASSERT_EQ(this->component.m_queue.getMessagesAvailable(), 1);
+    this->dispatchAll(this->component);
     ASSERT_EVENTS_FaultInvalid_SIZE(1);
     ASSERT_EVENTS_FaultInvalid(0, static_cast<U8>(FaultConfig::Fault::NUM_FAULTS));
-    // Nothing was queued for the component thread
-    ASSERT_EQ(this->component.m_queue.getMessagesAvailable(), 0);
     this->tick(TICKS_TO_RESPONSE);
     this->assertNotDispatched();
 }
@@ -541,6 +543,54 @@ void FaultManagerTester ::testDisableClearsLatch() {
     this->reportAndDispatch(FATAL, REBOOT_PORT, REBOOT_RESPONSE, REBOOT);
 }
 
+void FaultManagerTester ::testParameterSave() {
+    // Ground changes to the enabled responses and step failure modes
+    this->sendCommandSetResponseEnabled(REBOOT_RESPONSE, Fw::Enabled::DISABLED, Fw::CmdResponse::OK);
+    this->sendCommandUpdateStepFailureMode(RUN_SEQUENCE, FaultConfig::FailureMode::IGNORE, Fw::CmdResponse::OK);
+
+    // The tester base asserts that each saved value equals its own copy: set that copy to the expected active tables
+    // (never loaded by the component: the parameters are at their model defaults)
+    ResponsesEnabled responses;
+    responses[REBOOT_RESPONSE.e] = Fw::Enabled::DISABLED;
+    StepFailureModes steps;
+    const StepDefinitionTable definitions;
+    for (FwSizeType i = 0; i < StepDefinitionTable::SIZE; i++) {
+        const StepDefinitionEntry& entry = definitions[i];
+        if (entry.get_step() != FaultConfig::Step::SKIP) {
+            steps[entry.get_step()] = entry.get_failureMode();
+        }
+    }
+    steps[RUN_SEQUENCE.e] = FaultConfig::FailureMode::IGNORE;
+    this->paramSet_RESPONSE_TABLE(responses, Fw::ParamValid::VALID);
+    this->paramSet_STEP_TABLE(steps, Fw::ParamValid::VALID);
+    this->clearHistory();
+
+    // Never set nor loaded from a database: the model defaults make the parameters valid, so the saves are accepted
+    this->paramSave_RESPONSE_TABLE(0, 7);
+    this->paramSave_STEP_TABLE(0, 8);
+    this->dispatchAll(this->component);
+    ASSERT_CMD_RESPONSE_SIZE(2);
+    ASSERT_CMD_RESPONSE(0, FaultManager::OPCODE_RESPONSE_TABLE_SAVE, 7, Fw::CmdResponse::OK);
+    ASSERT_CMD_RESPONSE(1, FaultManager::OPCODE_STEP_TABLE_SAVE, 8, Fw::CmdResponse::OK);
+
+    // Revert the live tables, then reload from the (tester's) parameter database: the saved tables come back
+    this->sendCommandSetResponseEnabled(REBOOT_RESPONSE, Fw::Enabled::ENABLED, Fw::CmdResponse::OK);
+    this->sendCommandUpdateStepFailureMode(RUN_SEQUENCE, FaultConfig::FailureMode::FAULT, Fw::CmdResponse::OK);
+    this->component.loadParameters();
+    this->clearHistory();
+    this->report(FATAL);
+    ASSERT_EVENTS_StepSkipped_SIZE(0);
+    this->tick(TICKS_TO_RESPONSE);
+    ASSERT_EVENTS_ResponseStarted(0, REBOOT_RESPONSE, FATAL);
+    ASSERT_EVENTS_StepSkipped_SIZE(1);
+    ASSERT_EVENTS_ResponseCompleted_SIZE(1);
+    this->clearHistory();
+    this->remapFault(FATAL, SEQUENCE_RESPONSE, 10);
+    this->reportAndDispatch(FATAL, SEQUENCE_PORT, SEQUENCE_RESPONSE, RUN_SEQUENCE);
+    this->complete(Fw::Success::FAILURE, SEQUENCE_RESPONSE, RUN_SEQUENCE);
+    ASSERT_EVENTS_StepFailed(0, RUN_SEQUENCE, SEQUENCE_RESPONSE, FATAL, FaultConfig::FailureMode::IGNORE);
+}
+
 void FaultManagerTester ::testTableParameters() {
     // Valid RESPONSE_TABLE and STEP_TABLE parameters override the FaultConfig defaults
     ResponsesEnabled responses;
@@ -633,6 +683,92 @@ void FaultManagerTester ::tick(FwSizeType count) {
         this->invoke_to_run(0, 0);
         this->dispatchAll(this->component);
     }
+}
+
+void FaultManagerTester ::fillQueue() {
+    for (FwSizeType i = 0; i < TEST_INSTANCE_QUEUE_DEPTH; i++) {
+        this->invoke_to_run(0, 0);
+    }
+    ASSERT_EQ(this->component.m_queue.getMessagesAvailable(), static_cast<FwSizeType>(TEST_INSTANCE_QUEUE_DEPTH));
+}
+
+void FaultManagerTester ::drainQueue() {
+    // Each dispatched message queues at most one further message (a Tick, a step signal, or a Preempt)
+    for (FwSizeType i = 0; i < 4 * TEST_INSTANCE_QUEUE_DEPTH; i++) {
+        if (this->component.m_queue.getMessagesAvailable() == 0) {
+            return;
+        }
+        ASSERT_EQ(this->component.doDispatch(), Fw::QueuedComponentBase::MSG_DISPATCH_OK);
+    }
+    ASSERT_EQ(this->component.m_queue.getMessagesAvailable(), 0);
+}
+
+void FaultManagerTester ::testReportDroppedFromQueue() {
+    this->fillQueue();
+    this->invoke_to_reportIn(0, FATAL);
+    // The handleReport message was dropped, yet the report is latched
+    ASSERT_EQ(this->component.m_queue.getMessagesAvailable(), static_cast<FwSizeType>(TEST_INSTANCE_QUEUE_DEPTH));
+    this->drainQueue();
+    ASSERT_EVENTS_FaultReported_SIZE(0);
+    ASSERT_EVENTS_FaultIgnored_SIZE(0);
+    // The queued ticks exceed the countdown: the latched report is found and responded to
+    ASSERT_EVENTS_ResponseStarted_SIZE(1);
+    ASSERT_EVENTS_ResponseStarted(0, REBOOT_RESPONSE, FATAL);
+    this->assertDispatched(REBOOT_PORT, REBOOT_RESPONSE, REBOOT);
+
+    // The response completes and clears the latch as usual
+    this->complete(Fw::Success::SUCCESS, REBOOT_RESPONSE, REBOOT);
+    ASSERT_EVENTS_ResponseCompleted_SIZE(1);
+    this->clearHistory();
+    this->report(FATAL);
+    ASSERT_EVENTS_FaultReported_SIZE(1);
+}
+
+void FaultManagerTester ::testPreemptionAfterDroppedReport() {
+    this->remapFault(FATAL, SEQUENCE_RESPONSE, 10);
+    this->reportAndDispatch(FATAL, SEQUENCE_PORT, SEQUENCE_RESPONSE, RUN_SEQUENCE);
+
+    this->fillQueue();
+    this->invoke_to_reportIn(0, FAILURE);
+    ASSERT_EQ(this->component.m_queue.getMessagesAvailable(), static_cast<FwSizeType>(TEST_INSTANCE_QUEUE_DEPTH));
+    this->drainQueue();
+    ASSERT_EVENTS_FaultReported_SIZE(0);
+
+    // The tick audit finds the latched higher-precedence fault and preempts, exactly once
+    ASSERT_EVENTS_StepCancel_SIZE(1);
+    ASSERT_EVENTS_StepCancel(0, RUN_SEQUENCE);
+    ASSERT_from_stepCancelOut_SIZE(1);
+    ASSERT_EQ(this->m_last_cancel_port, static_cast<FwIndexType>(SEQUENCE_PORT.e));
+    ASSERT_EVENTS_ResponsePreempted_SIZE(1);
+    ASSERT_EVENTS_ResponsePreempted(0, SEQUENCE_RESPONSE, FATAL, FAILURE);
+    ASSERT_EVENTS_StepTimedOut_SIZE(0);
+    ASSERT_EVENTS_ResponseFailed_SIZE(0);
+    this->clearHistory();
+
+    // The preempting fault is responded to after a fresh countdown
+    this->tick(TICKS_TO_RESPONSE);
+    ASSERT_EVENTS_ResponseStarted(0, REBOOT_RESPONSE, FAILURE);
+    this->assertDispatched(REBOOT_PORT, REBOOT_RESPONSE, REBOOT);
+}
+
+void FaultManagerTester ::testDisabledReportDroppedFromQueue() {
+    this->sendCommandSetFaultEnabled(FATAL, Fw::Enabled::DISABLED, Fw::CmdResponse::OK);
+    this->clearHistory();
+
+    this->fillQueue();
+    this->invoke_to_reportIn(0, FATAL);
+    this->drainQueue();
+    // The tick audit discards the report of the disabled fault as the dropped handler would have
+    ASSERT_EVENTS_FaultDisabled_SIZE(1);
+    ASSERT_EVENTS_FaultDisabled(0, FATAL);
+    this->assertNotDispatched();
+    this->clearHistory();
+
+    // Re-enabling the fault does not resurrect the discarded report
+    this->sendCommandSetFaultEnabled(FATAL, Fw::Enabled::ENABLED, Fw::CmdResponse::OK);
+    this->clearHistory();
+    this->tick(TICKS_TO_RESPONSE);
+    this->assertNotDispatched();
 }
 
 void FaultManagerTester ::complete(const Fw::Success& status,

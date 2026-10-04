@@ -6,7 +6,8 @@ module FaultProtection {
 @* Use this interface on any component that needs to report a fault to FaultManager. It consists of the single output
 @* port `faultOut` used to report the fault.
 @*
-@* Components using this interface can connect to FaultManager using: fault connections instance <instance name>.
+@* Deployments connect `faultOut` to `Svc.FaultProtection.Subtopology.reportIn` (or `faultManager.reportIn`) in the
+@* topology; there is no pattern graph specifier for fault reports.
 interface Reporter {
     @ Report a fault to FaultManager
     output port faultOut: Svc.FaultProtection.FaultReport

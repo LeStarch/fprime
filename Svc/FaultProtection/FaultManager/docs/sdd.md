@@ -15,7 +15,7 @@ Translates incoming fault reports into a series of fault response step dispatche
 | SVC_FAULTMANAGER_007 | FaultManager shall require the project's `FaultConfig.Fault` enumeration to define `FAULT_RESPONSE_FAILURE` reserved for FaultManager's own fault.        | Unit-Test    |
 | SVC_FAULTMANAGER_008 | If a step fails with failure mode `FAULT`, FaultManager shall cease the response and report `FAULT_RESPONSE_FAILURE`. Mode `DEFER` continues the steps and reports after the response; mode `IGNORE` continues the steps and reports nothing. | Unit-Test |
 | SVC_FAULTMANAGER_009 | FaultManager shall provide a command to enable/disable each fault.                                                                                        | Unit-Test    |
-| SVC_FAULTMANAGER_010 | FaultManager shall latch each reported fault until its response starts; further reports of a latched fault shall be ignored.                              | Unit-Test    |
+| SVC_FAULTMANAGER_010 | FaultManager shall latch each reported fault until the response to it completes (or fails); further reports of a latched fault shall be ignored. A preempted fault stays latched. | Unit-Test    |
 | SVC_FAULTMANAGER_011 | FaultManager shall provide a command to enable/disable each response.                                                                                      | Unit-Test    |
 | SVC_FAULTMANAGER_012 | FaultManager shall provide a command to set the failure mode of each step.                                                                                 | Unit-Test    |
 | SVC_FAULTMANAGER_013 | FaultManager shall wait `FaultConfig.RESPONSE_COUNTDOWN_TICKS` ticks after the first latched report, then respond to the highest-precedence latched fault. | Unit-Test    |
@@ -52,10 +52,19 @@ stateDiagram-v2
 1. **IDLE**: each tick enters `CHECK_REPORT`, which scans for a latched report in precedence order. A completed
    response also returns through `CHECK_REPORT`, so a report latched during the response starts its countdown
    without waiting for another tick.
-2. **COUNTDOWN**: `FaultConfig.RESPONSE_COUNTDOWN_TICKS` ticks allow further reports to accumulate.
-3. **RESPONSE**: the enabled fault of highest precedence is selected; its latch is cleared; the response's steps are
-   dispatched in order on `stepDispatchOut[<step port>]`. A completion on `stepCompletionIn` for the active step
-   advances to the next step. `SKIP` steps and the steps of a disabled response are skipped with `StepSkipped`.
+2. **COUNTDOWN**: `FaultConfig.RESPONSE_COUNTDOWN_TICKS` ticks allow further reports to accumulate; with a value of
+   0 this state is skipped and the response starts on the tick that detects the report.
+3. **RESPONSE**: the enabled fault of highest precedence is selected and its response's steps are dispatched in
+   order on `stepDispatchOut[<step port>]`. A completion on `stepCompletionIn` for the active step advances to the
+   next step. The latches are cleared when the response completes: on success, the latch of every enabled fault
+   mapped to the response; on failure, the latch of the triggering fault only; never on preemption. The steps of a
+   disabled response are skipped with `StepSkipped`; a `SKIP` step ends the response.
+
+Reports are latched synchronously in `reportIn` (an atomic per-fault flag); the `handleReport` message announcing a
+report on the component's thread (`FaultReported`/`FaultIgnored`/`FaultDisabled`, telemetry, immediate preemption) is
+dropped when the queue is full. Every tick therefore re-evaluates the latches themselves (`auditLatches`): the report
+of a disabled fault is discarded and a latched fault that outranks the fault under response preempts it, so a dropped
+message costs at most one diagnostic and one tick of preemption latency; the report is never lost.
 4. A failed step is handled per its `FailureMode`: `IGNORE` continues; `DEFER` continues and fails the response at
    its end; `FAULT` fails the response immediately. A failed response reports `FAULT_RESPONSE_FAILURE` internally,
    unless the failed response was itself the response to `FAULT_RESPONSE_FAILURE`.
@@ -166,6 +175,10 @@ default and `TestDeploymentsProject/Ref/Config/FaultConfig.fpp` for an example o
 | `StepDefinitionTable`       | One `StepDefinitionEntry` (failure mode, port, timeout ticks, context) per step except `SKIP` |
 
 The tables are loaded at construction and may be overridden by the `FAULT_RESPONSE_TABLE`, `RESPONSE_TABLE`, and
-`STEP_TABLE` parameters when those are valid in the parameter database. The `Svc.FaultProtection.Subtopology`
+`STEP_TABLE` parameters when those are valid in the parameter database. The parameters declare defaults so that they
+are always valid and their `PRM_SAVE` commands are accepted before any `PRM_SET`; a save always persists the active
+table (for `STEP_TABLE`, the `FaultConfig` step definitions' failure modes until a valid table is loaded or set), so
+`SET_RESPONSE_ENABLED` and `UPDATE_STEP_FAILURE_MODE` changes can be persisted directly. The `Svc.FaultProtection.Subtopology`
 instantiates the FaultManager with a `SequenceResponder` and a `RebootResponder` and exposes `reportIn`,
-`faultManagerRun`, and the sequencer ports for the deployment to connect.
+`faultManagerRun`, `rebootResponderRun`, and the sequencer ports (`seqRunOut`, `seqCancelOut`, `seqDoneIn`) for the
+deployment to connect; see [the subtopology SDD](../../Subtopology/docs/sdd.md).

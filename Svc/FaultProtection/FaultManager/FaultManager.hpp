@@ -8,6 +8,7 @@
 #define Svc_FaultProtection_FaultManager_HPP
 
 #include <atomic>
+#include <limits>
 
 #include "Fw/Prm/PrmExternalTypes.hpp"
 #include "Svc/FaultProtection/FaultConfig/FppConstantsAc.hpp"
@@ -32,6 +33,7 @@ class FaultManager : public FaultManagerComponentBase, public Fw::ParamExternalD
         FwSizeType countdown = 0;                                          //!< Countdown for delayed response execution
         Fw::Success response_result = Fw::Success::SUCCESS;                //!< Result of the response execution
         FaultConfig::Fault preempted_by = FaultConfig::Fault::NUM_FAULTS;  //!< Fault preempting the active response
+        bool preempt_pending = false;  //!< Preempt has been signaled and not yet processed by the state machine
         FwSizeType active_fault_index = NO_ACTIVE_INDEX;     //!< Fault response table index of the active fault
         FwSizeType active_response_index = NO_ACTIVE_INDEX;  //!< Response definition table index of the response
         FwSizeType active_step_index = 0;                    //!< Index of the next step to dispatch in the response
@@ -93,6 +95,11 @@ class FaultManager : public FaultManagerComponentBase, public Fw::ParamExternalD
     //!
     //! Announces a latched report, discards disabled reports, and preempts the active response when warranted
     void handleReport_internalInterfaceHandler(const FaultConfig::Fault& fault, bool latched) override;
+
+    //! Handler implementation for handleInvalidReport
+    //!
+    //! Emits FaultInvalid for an out-of-range fault id
+    void handleInvalidReport_internalInterfaceHandler(U8 rawId) override;
 
     // ----------------------------------------------------------------------
     // Handler implementations for commands
@@ -168,6 +175,11 @@ class FaultManager : public FaultManagerComponentBase, public Fw::ParamExternalD
         ) override;
 
     //! Implementation for action tickStep of state machine Svc_FaultProtection_FaultManagerStateMachine
+    void Svc_FaultProtection_FaultManagerStateMachine_action_auditLatches(
+        SmId smId,                                                   //!< The state machine id
+        Svc_FaultProtection_FaultManagerStateMachine::Signal signal  //!< The signal
+        ) override;
+
     void Svc_FaultProtection_FaultManagerStateMachine_action_tickStep(
         SmId smId,                                                   //!< The state machine id
         Svc_FaultProtection_FaultManagerStateMachine::Signal signal  //!< The signal
@@ -179,6 +191,14 @@ class FaultManager : public FaultManagerComponentBase, public Fw::ParamExternalD
 
     //! Implementation for guard hasReport of state machine Svc_FaultProtection_FaultManagerStateMachine
     bool Svc_FaultProtection_FaultManagerStateMachine_guard_hasReport(
+        SmId smId,                                                   //!< The state machine id
+        Svc_FaultProtection_FaultManagerStateMachine::Signal signal  //!< The signal
+    ) const override;
+
+    //! Implementation for guard countdownConfigured of state machine Svc_FaultProtection_FaultManagerStateMachine
+    //!
+    //! True when FaultConfig::RESPONSE_COUNTDOWN_TICKS is nonzero
+    bool Svc_FaultProtection_FaultManagerStateMachine_guard_countdownConfigured(
         SmId smId,                                                   //!< The state machine id
         Svc_FaultProtection_FaultManagerStateMachine::Signal signal  //!< The signal
     ) const override;
@@ -198,6 +218,9 @@ class FaultManager : public FaultManagerComponentBase, public Fw::ParamExternalD
     // ----------------------------------------------------------------------
     // Helpers
     // ----------------------------------------------------------------------
+
+    //! Signal Preempt by `fault` unless a Preempt is already pending
+    void preempt(const FaultConfig::Fault& fault);
 
     //! Record the result of the active step and queue the matching state machine signal
     void handleStepResult(const Fw::Success& status);

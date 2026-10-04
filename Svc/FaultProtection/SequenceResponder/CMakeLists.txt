@@ -22,7 +22,6 @@ register_fprime_library(
     DEPENDS
         Svc_Seq
         Fw_Cmd
-        Os
 )
 
 ### Unit Tests ###

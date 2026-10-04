@@ -43,7 +43,9 @@ bool SequenceResponder ::sequenceFileName(const FaultConfig::Step& step, Fw::Fil
     const FwSignedSizeType separator =
         Fw::StringUtils::substring_find(stepString.toChar(), stepString.length(), " ", 1);
     const FwSizeType nameLength = (separator >= 0) ? static_cast<FwSizeType>(separator) : stepString.length();
-    (void)Fw::StringUtils::string_copy(stepName, stepString.toChar(), FW_MIN(nameLength + 1, sizeof(stepName)));
+    // The name is at most the enumeration string, which fits a buffer of the same capacity
+    FW_ASSERT(nameLength < sizeof(stepName), static_cast<FwAssertArgType>(nameLength));
+    (void)Fw::StringUtils::string_copy(stepName, stepString.toChar(), nameLength + 1);
     status = fileName.format("%s/%s.seq", this->m_directory.toChar(), stepName);
 #else
     status = fileName.format("%s/%" PRIu8 ".seq", this->m_directory.toChar(), static_cast<U8>(step.e));

@@ -18,6 +18,7 @@ The application illustrates some example application components:
 |BlockDriver  | A notional driver that relays buffers from SendBuffApp to RecvBuffApp | [SDD](../BlockDriver/docs/sdd.md)|
 |SignalGen | A component that generates telemetry following a waveform| [SDD](../SignalGen/docs/sdd.md)|
 |PingReceiver|A test component that gets health pings that can be turned off| [SDD](../PingReceiver/docs/sdd.md)| 
+|MonitoredCounter|Fault protection demonstration: a monitored counter reporting the `COUNTER_HIGH` fault corrected by a sequence response| [SDD](../MonitoredCounter/docs/sdd.md)|
 
 It interconnects those application components with reusable service components:
 

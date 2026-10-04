@@ -15,7 +15,7 @@ module FaultConfig {
     @* Number of FaultManager `run` ticks to wait after a fault report before starting the response
     @*
     @* This delay allows additional (possibly higher-precedence) fault reports to accumulate such that the response
-    @* to the highest-precedence fault is selected. A value of 0 responds on the tick following the report.
+    @* to the highest-precedence fault is selected. A value of 0 responds on the tick that detects the report.
     constant RESPONSE_COUNTDOWN_TICKS = 2
 
     @* Fault ID enumeration

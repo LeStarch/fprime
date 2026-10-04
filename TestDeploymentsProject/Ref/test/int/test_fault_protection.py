@@ -11,7 +11,8 @@ The response sequences must be compiled and placed where the deployment expects 
     fprime-seqgen --dictionary <dictionary> Ref/sequences/ACKNOWLEDGE_SEQUENCE.seq /tmp/fp-seq/ACKNOWLEDGE_SEQUENCE.seq
 
 Monitoring of the counter starts disabled (so a Ref without the sequences installed does not fault on its own); the
-tests enable it with SET_MONITORING. The directory is kept short: CmdSequencer bounds the path to 40 characters.
+tests enable it for the session with SET_MONITORING and disable it again before the compiled sequences are removed.
+The directory is kept short: CmdSequencer bounds the path to 40 characters.
 """
 
 import subprocess
@@ -26,31 +27,43 @@ STEPS = ["RESET_COUNT_SEQUENCE", "ACKNOWLEDGE_SEQUENCE"]
 # One excursion takes COUNT_THRESHOLD + SYSTEM_ERROR_THRESHOLD cycles (14 s at 1 Hz) plus the response countdown and
 # two sequences; allow generous margin for a loaded test machine
 EXCURSION_TIMEOUT = 60
+# Cycles to wait past a report before concluding no response started: FaultConfig.RESPONSE_COUNTDOWN_TICKS (2) plus
+# the tick that selects the response, with margin
+COUNTDOWN_MARGIN_CYCLES = 5
 
 
 @pytest.fixture(scope="session", autouse=True)
 def response_sequences(fprime_test_api_session):
-    """Compile the response sequences into the directory the deployment reads them from"""
+    """Compile the response sequences into the directory the deployment reads them from, removing them afterwards"""
+    if SEQUENCE_DIRECTORY.is_symlink():
+        pytest.fail(f"{SEQUENCE_DIRECTORY} is a symlink; refusing to write through it")
     SEQUENCE_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    for step in STEPS:
-        result = subprocess.run(
+    compiled = [SEQUENCE_DIRECTORY / f"{step}.seq" for step in STEPS]
+    for step, target in zip(STEPS, compiled):
+        subprocess.run(
             [
                 "fprime-seqgen",
                 "--dictionary",
                 str(fprime_test_api_session.dictionaries.dictionary_path),
                 str(SEQUENCE_SOURCES / f"{step}.seq"),
-                str(SEQUENCE_DIRECTORY / f"{step}.seq"),
-            ]
+                str(target),
+            ],
+            check=True,
         )
-        assert result.returncode == 0, f"Failed to compile {step}.seq"
+    yield compiled
+    for target in compiled:
+        if target.exists():
+            target.unlink()
 
 
 @pytest.fixture(scope="session", autouse=True)
 def monitoring_enabled(fprime_test_api_session, response_sequences):
-    """Enable the counter monitor once the response sequences are in place"""
+    """Enable the counter monitor once the response sequences are in place; disable it before they are removed"""
     counter = fprime_test_api_session.get_mnemonic("Ref.MonitoredCounter")
     fprime_test_api_session.send_and_assert_command(f"{counter}.SET_MONITORING", ["ENABLED"], max_delay=5)
     fprime_test_api_session.clear_histories()
+    yield
+    fprime_test_api_session.send_and_assert_command(f"{counter}.SET_MONITORING", ["DISABLED"], max_delay=5)
 
 
 def names(fprime_test_api):
@@ -133,6 +146,10 @@ def test_disabled_fault_not_responded(fprime_test_api):
         fprime_test_api.assert_event_sequence(
             [f"{COUNTER}.CountHighFault", f"{FAULT_MANAGER}.FaultDisabled"], timeout=EXCURSION_TIMEOUT
         )
+        # Outlast the response countdown (ticks of the same 1 Hz rate group that drives the counter) before
+        # concluding that no response started
+        count = fprime_test_api.await_telemetry(f"{COUNTER}.Count", timeout=5).get_val()
+        fprime_test_api.assert_telemetry(f"{COUNTER}.Count", value=count + COUNTDOWN_MARGIN_CYCLES, timeout=15)
         fprime_test_api.assert_event_count(0, events=f"{FAULT_MANAGER}.ResponseStarted")
         # The counter stays uncorrected until commanded by the ground
         fprime_test_api.assert_telemetry(f"{COUNTER}.Monitor", value="RED", timeout=5)

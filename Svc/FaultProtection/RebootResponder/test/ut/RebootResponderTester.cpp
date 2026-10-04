@@ -57,11 +57,15 @@ void RebootResponderTester ::testTicksWithoutRequest() {
 void RebootResponderTester ::testRepeatedRequest() {
     this->invoke_to_faultResponseDispatch(0, REBOOT_RESPONSE, REBOOT, FaultConfig::Context());
     this->tick(REBOOT_DELAY_TICKS - 1);
-    this->invoke_to_faultResponseDispatch(0, REBOOT_RESPONSE, REBOOT, FaultConfig::Context());
+    const FaultConfig::Response otherResponse(FaultConfig::Response::SEQUENCE_THEN_REBOOT_RESPONSE);
+    this->invoke_to_faultResponseDispatch(0, otherResponse, REBOOT, FaultConfig::Context());
     ASSERT_EVENTS_RebootRequested_SIZE(2);
-    // The delay runs from the first request
+    ASSERT_EVENTS_RebootRequested(1, otherResponse, REBOOT);
+    // The delay runs from the first request, which stays authoritative for the completion
     this->tick(1);
     ASSERT_EQ(this->component.rebootCount, 1);
+    ASSERT_from_faultResponseComplete_SIZE(1);
+    ASSERT_from_faultResponseComplete(0, Fw::Success::FAILURE, REBOOT_RESPONSE, REBOOT);
 }
 
 void RebootResponderTester ::testHookReturnFails() {

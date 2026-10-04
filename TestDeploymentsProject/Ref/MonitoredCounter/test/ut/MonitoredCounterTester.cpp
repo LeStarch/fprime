@@ -126,14 +126,39 @@ void MonitoredCounterTester ::testResetRecovers() {
 }
 
 void MonitoredCounterTester ::testDefaultDisabled() {
+    // A second instance, never commanded, with its outputs routed to this tester
     MonitoredCounter fresh("fresh");
-    fresh.init(MonitoredCounterTester::TEST_INSTANCE_QUEUE_DEPTH, MonitoredCounterTester::TEST_INSTANCE_ID);
-    // Without a connection the monitor cannot report; a disabled monitor never tries
-    ASSERT_FALSE(fresh.isConnected_faultOut_OutputPort(0));
-    for (U32 i = 0; i < (DEFAULT_COUNT_THRESHOLD + DEFAULT_SYSTEM_ERROR_THRESHOLD); i++) {
+    fresh.init(MonitoredCounterTester::TEST_INSTANCE_QUEUE_DEPTH, MonitoredCounterTester::TEST_INSTANCE_ID + 1);
+    fresh.set_faultOut_OutputPort(0, this->get_from_faultOut(0));
+    fresh.set_logOut_OutputPort(0, this->get_from_logOut(0));
+#if FW_ENABLE_TEXT_LOGGING == 1
+    fresh.set_logTextOut_OutputPort(0, this->get_from_logTextOut(0));
+#endif
+    fresh.set_timeCaller_OutputPort(0, this->get_from_timeCaller(0));
+    fresh.set_tlmOut_OutputPort(0, this->get_from_tlmOut(0));
+    fresh.set_prmGet_OutputPort(0, this->get_from_prmGet(0));
+    fresh.loadParameters();
+    this->clearHistory();
+
+    const U32 cycles = DEFAULT_COUNT_THRESHOLD + DEFAULT_SYSTEM_ERROR_THRESHOLD;
+    for (U32 i = 0; i < cycles; i++) {
         fresh.get_run_InputPort(0)->invoke(0);
-        (void)fresh.doDispatch();
+        // The run message and the state machine signal it queues
+        for (FwSizeType j = 0; (j < 2) && (fresh.m_queue.getMessagesAvailable() > 0); j++) {
+            ASSERT_EQ(fresh.doDispatch(), Fw::QueuedComponentBase::MSG_DISPATCH_OK);
+        }
+        ASSERT_EQ(fresh.m_queue.getMessagesAvailable(), 0);
     }
+    // Counting proceeds, but the monitor is BLACK and never evaluates: no warning, no fault, no errors
+    ASSERT_TLM_Count_SIZE(cycles);
+    ASSERT_TLM_Count(cycles - 1, cycles);
+    ASSERT_TLM_Monitor(0, BLACK);
+    for (U32 i = 0; i < static_cast<U32>(this->tlmHistory_ErrorCount->size()); i++) {
+        ASSERT_TLM_ErrorCount(i, 0);
+    }
+    ASSERT_EVENTS_CountHighWarning_SIZE(0);
+    ASSERT_EVENTS_CountHighFault_SIZE(0);
+    ASSERT_from_faultOut_SIZE(0);
     fresh.deinit();
 }
 

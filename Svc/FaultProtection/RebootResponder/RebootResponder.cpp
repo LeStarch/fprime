@@ -45,7 +45,8 @@ void RebootResponder ::faultResponseDispatch_handler(FwIndexType portNum,
                                                      const FaultConfig::Step& step,
                                                      const FaultConfig::Context& context) {
     this->log_WARNING_HI_RebootRequested(response, step);
-    Fw::Logger::log("RebootResponder: hard reboot requested by response %d step %d\n", response.e, step.e);
+    Fw::Logger::log("RebootResponder: hard reboot requested by response %d step %d\n", static_cast<int>(response.e),
+                    static_cast<int>(step.e));
     // A reboot already pending is not restarted: the earliest request sets the deadline
     if (not this->m_pending) {
         this->m_pending = true;

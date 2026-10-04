@@ -8,7 +8,6 @@
 #define Svc_FaultProtection_SequenceResponder_HPP
 
 #include "Fw/Types/FileNameString.hpp"
-#include "Os/Mutex.hpp"
 #include "Svc/FaultProtection/SequenceResponder/SequenceResponderComponentAc.hpp"
 
 namespace Svc {

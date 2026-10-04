@@ -6,6 +6,8 @@
 
 #include "Ref/MonitoredCounter/MonitoredCounter.hpp"
 
+#include <limits>
+
 namespace Ref {
 
 // ----------------------------------------------------------------------
