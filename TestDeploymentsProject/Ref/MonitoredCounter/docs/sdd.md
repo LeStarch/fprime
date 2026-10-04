@@ -20,7 +20,8 @@ Demonstration of the fault protection monitor pattern: counts rate group cycles,
 `MonitoredCounter` is an `active` component on the 1 Hz rate group. Each cycle increments `Count` and sends the
 `cycle` signal to its `MonitorMachine` instance, which evaluates the monitor on the component's thread:
 
-- precondition (`SET_MONITORING` enabled) false → BLACK;
+- precondition (`SET_MONITORING` enabled) false → BLACK; monitoring starts DISABLED so that a deployment can enable
+  it once the response sequences are in place;
 - test (`Count > COUNT_THRESHOLD`) false → error count decremented, GREEN;
 - test true → error count incremented; at `SYSTEM_ERROR_THRESHOLD` → RED and the system response reports
   `COUNTER_HIGH` through `faultOut` (once per excursion); else at `LOCAL_ERROR_THRESHOLD` → YELLOW and the local
@@ -43,13 +44,13 @@ continuous demonstration of fault → response → correction visible in events 
 ## 3. Running the demonstration
 
 Compile the response sequences against the deployment dictionary into the directory configured in
-`RefTopology.cpp` (`/tmp/uplink`):
+`RefTopology.cpp` (`/tmp/fp-seq`, separate from the file-uplink directory):
 
 ```
-fprime-seqgen --dictionary <dict> Ref/sequences/RESET_COUNT_SEQUENCE.seq /tmp/uplink/RESET_COUNT_SEQUENCE.seq
-fprime-seqgen --dictionary <dict> Ref/sequences/ACKNOWLEDGE_SEQUENCE.seq /tmp/uplink/ACKNOWLEDGE_SEQUENCE.seq
+fprime-seqgen --dictionary <dict> Ref/sequences/RESET_COUNT_SEQUENCE.seq /tmp/fp-seq/RESET_COUNT_SEQUENCE.seq
+fprime-seqgen --dictionary <dict> Ref/sequences/ACKNOWLEDGE_SEQUENCE.seq /tmp/fp-seq/ACKNOWLEDGE_SEQUENCE.seq
 ```
 
-Then run `fprime-gds` and watch the `Ref.monitoredCounter`, `Svc.FaultProtection.faultManager`,
+Then run `fprime-gds`, send `Ref.monitoredCounter.SET_MONITORING ENABLED`, and watch the `Ref.monitoredCounter`, `Svc.FaultProtection.faultManager`,
 `Svc.FaultProtection.sequenceResponder`, and `Ref.fpSeq` events. The integration tests in `Ref/test/int/test_fault_protection.py`
 automate this flow.

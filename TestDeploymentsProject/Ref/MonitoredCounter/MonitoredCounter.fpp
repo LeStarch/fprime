@@ -28,7 +28,8 @@ module Ref {
         @ Reset the count to zero (the fault corrective action)
         async command RESET_COUNT
 
-        @ Enable or disable monitoring (the monitor's precondition)
+        @ Enable or disable monitoring (the monitor's precondition). Monitoring starts DISABLED such that a
+        @ deployment without the response sequences installed does not fault on its own.
         async command SET_MONITORING(enabled: Fw.Enabled)
 
         @ Count above which the monitor's test fails

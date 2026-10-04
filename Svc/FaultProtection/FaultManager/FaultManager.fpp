@@ -63,6 +63,9 @@ module FaultProtection {
         @ Action to dispatch a response step
         action dispatchStep
 
+        @ Action to count a tick against the active step's timeout, failing the step when it expires
+        action tickStep
+
         @ When a report is detected, enter COUNTDOWN to allow for additional reports to be processed before executing
         @ response otherwise return to the IDLE state to await the next tick and check again.
         choice CHECK_REPORT {
@@ -72,7 +75,7 @@ module FaultProtection {
         @ Enter IDLE state on initialization
         initial enter IDLE
 
-        @ IDLE state: wait for fault report, warning on other signals
+        @ IDLE state: wait for a tick that finds a latched fault report; other signals are ignored
         state IDLE {
             on Tick enter CHECK_REPORT
         }
@@ -114,6 +117,9 @@ module FaultProtection {
             @ DISPATCH_STEP state: dispatch a response step
             state DISPATCH_STEP {
                 entry do { dispatchStep }
+
+                @ Each tick counts against the active step's timeout
+                on Tick do { tickStep }
 
                 @ When a step succeeds, check if the response is done
                 on StepSuccessful enter CHECK_RESPONSE
@@ -170,11 +176,14 @@ module FaultProtection {
         @ Outgoing response step cancel
         output port stepCancelOut: [FaultConfig.Port.NUM_PORTS] Fw.Signal
 
-        @ Incoming response step completion. Dropped on overflow to avoid asserting (FATAL) within fault handling.
+        @* Incoming response step completion. Dropped on overflow to avoid asserting (FATAL) within fault handling: a
+        @* dropped completion is recovered by the step's timeout.
         async input port stepCompletionIn: FaultResponseComplete drop
 
-        @ Internal port for announcing a newly latched fault report on the component's thread. The latch itself is set
-        @ synchronously, so a dropped message only loses the announcement, never the report.
+        @ Internal port for processing a fault report on the component's thread: events, telemetry, the disabled-fault
+        @ latch clear, and the preemption check. The latch itself is set synchronously in reportIn, so a dropped
+        @ message delays preemption/diagnostics to the next tick, where hasReport finds the latched report; the report
+        @ is never lost.
         internal port handleReport(fault: FaultConfig.Fault, latched: bool) drop
 
         @ Event indicating a fault was reported and latched. Latching bounds this event to one per fault per response.
@@ -207,6 +216,10 @@ module FaultProtection {
         event ResponseFailed(response: FaultConfig.Response, fault: FaultConfig.Fault) \
             severity warning high format "{} failed, triggered by {}"
 
+        @ The response to FAULT_RESPONSE_FAILURE itself failed: fault protection has no further escalation
+        event EscalationExhausted(response: FaultConfig.Response) \
+            severity warning high format "{} to FAULT_RESPONSE_FAILURE failed; escalation exhausted"
+
         @ Fault response preempted by a higher-precedence fault. The triggering fault remains latched.
         event ResponsePreempted(response: FaultConfig.Response, fault: FaultConfig.Fault, by: FaultConfig.Fault) \
             severity warning low format "{} triggered by {} preempted by higher-precedence fault {}"
@@ -223,6 +236,10 @@ module FaultProtection {
         event StepFailed(step: FaultConfig.Step, response: FaultConfig.Response, fault: FaultConfig.Fault, \
                          failureMode: FaultConfig.FailureMode) \
             severity warning high format "{} failed as part of {} triggered by {}; failure mode {}"
+
+        @ Fault response step did not complete within its configured timeout: canceled and treated as failed
+        event StepTimedOut(step: FaultConfig.Step, response: FaultConfig.Response, fault: FaultConfig.Fault) \
+            severity warning high format "{} of {} triggered by {} timed out; step treated as failed"
 
         @ Fault response step dispatch port is not connected: configuration error, step treated as failed
         event StepPortUnconnected(step: FaultConfig.Step, $port: FaultConfig.Port) \
@@ -252,9 +269,17 @@ module FaultProtection {
         event StepFailureModeSet(step: FaultConfig.Step, failureMode: FaultConfig.FailureMode) \
             severity activity high format "{} failure mode set to {}"
 
-        @ Command argument was out of range of the configured tables
-        event InvalidCommandArgument(value: U8) \
-            severity warning low format "Command argument {} is not a configured enumeration value"
+        @ Command fault argument was out of range of the configured faults
+        event InvalidFaultArgument(value: U8) \
+            severity warning low format "Fault argument {} is not a configured fault"
+
+        @ Command response argument was out of range of the configured responses
+        event InvalidResponseArgument(value: U8) \
+            severity warning low format "Response argument {} is not a configured response"
+
+        @ Command step argument was out of range of the configured steps
+        event InvalidStepArgument(value: U8) \
+            severity warning low format "Step argument {} is not a configured step"
 
         @ Count of faults reported
         telemetry FaultsReported: FwSizeType

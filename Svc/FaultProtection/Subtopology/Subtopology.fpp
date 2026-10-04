@@ -43,6 +43,9 @@ module FaultProtection {
         @ Input port for the rate group tick driving the FaultManager
         port faultManagerRun = faultManager.run
 
+        @ Input port for the rate group tick driving the RebootResponder's reboot delay
+        port rebootResponderRun = rebootResponder.run
+
         @ Output port requesting a sequence run from the fault response sequencer
         port seqRunOut = sequenceResponder.seqRunOut
 

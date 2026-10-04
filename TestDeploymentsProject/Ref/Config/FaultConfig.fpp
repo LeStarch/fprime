@@ -59,10 +59,10 @@ module FaultConfig {
         { response = Response.RESET_COUNTER_RESPONSE, steps = [Step.RESET_COUNT_SEQUENCE, Step.ACKNOWLEDGE_SEQUENCE, Step.SKIP] }
     ]
 
-    @ Step definition table: one entry per step except SKIP
+    @ Step definition table: one entry per step except SKIP. Timeouts are in 1 Hz FaultManager ticks.
     constant StepDefinitionTable = [
-        { step = Step.RESET_COUNT_SEQUENCE, failureMode = FailureMode.FAULT,  dispatchPort = Port.SEQUENCE_RESPONDER_PORT, context = { example = 0 } },
-        { step = Step.ACKNOWLEDGE_SEQUENCE, failureMode = FailureMode.IGNORE, dispatchPort = Port.SEQUENCE_RESPONDER_PORT, context = { example = 0 } },
-        { step = Step.REBOOT,               failureMode = FailureMode.FAULT,  dispatchPort = Port.REBOOT_RESPONDER_PORT,   context = { example = 0 } }
+        { step = Step.RESET_COUNT_SEQUENCE, failureMode = FailureMode.FAULT,  dispatchPort = Port.SEQUENCE_RESPONDER_PORT, timeoutTicks = 30, context = { example = 0 } },
+        { step = Step.ACKNOWLEDGE_SEQUENCE, failureMode = FailureMode.IGNORE, dispatchPort = Port.SEQUENCE_RESPONDER_PORT, timeoutTicks = 30, context = { example = 0 } },
+        { step = Step.REBOOT,               failureMode = FailureMode.FAULT,  dispatchPort = Port.REBOOT_RESPONDER_PORT,   timeoutTicks = 30, context = { example = 0 } }
     ]
 }

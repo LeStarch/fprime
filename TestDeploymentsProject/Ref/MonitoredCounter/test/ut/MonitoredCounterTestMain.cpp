@@ -25,6 +25,12 @@ TEST(Nominal, ResetRecovers) {
     tester.testResetRecovers();
 }
 
+TEST(OffNominal, DefaultDisabled) {
+    COMMENT("Monitoring starts disabled so a deployment without response sequences does not fault on its own");
+    Ref::MonitoredCounterTester tester;
+    tester.testDefaultDisabled();
+}
+
 TEST(OffNominal, MonitoringDisabled) {
     COMMENT("Disabled monitoring turns the monitor BLACK and suspends error counting");
     Ref::MonitoredCounterTester tester;

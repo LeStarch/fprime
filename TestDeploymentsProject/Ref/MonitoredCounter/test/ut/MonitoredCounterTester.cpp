@@ -27,6 +27,9 @@ MonitoredCounterTester ::MonitoredCounterTester()
     this->initComponents();
     this->connectPorts();
     this->component.loadParameters();
+    // Monitoring starts disabled: the tests exercise the monitor, so enable it up front
+    this->setMonitoring(Fw::Enabled::ENABLED);
+    this->clearHistory();
 }
 
 MonitoredCounterTester ::~MonitoredCounterTester() {
@@ -58,6 +61,8 @@ void MonitoredCounterTester ::testFault() {
     ASSERT_EVENTS_MonitorColorChanged(0, GREEN, YELLOW, DEFAULT_COUNT_THRESHOLD + DEFAULT_LOCAL_ERROR_THRESHOLD,
                                       DEFAULT_LOCAL_ERROR_THRESHOLD);
     ASSERT_EVENTS_CountHighWarning_SIZE(1);
+    ASSERT_EVENTS_CountHighWarning(0, DEFAULT_COUNT_THRESHOLD + DEFAULT_LOCAL_ERROR_THRESHOLD,
+                                   DEFAULT_LOCAL_ERROR_THRESHOLD);
     ASSERT_EVENTS_CountHighFault_SIZE(0);
     ASSERT_TLM_Monitor_SIZE(1);
     ASSERT_TLM_Monitor(0, YELLOW);
@@ -120,6 +125,18 @@ void MonitoredCounterTester ::testResetRecovers() {
     ASSERT_from_faultOut(0, COUNTER_HIGH);
 }
 
+void MonitoredCounterTester ::testDefaultDisabled() {
+    MonitoredCounter fresh("fresh");
+    fresh.init(MonitoredCounterTester::TEST_INSTANCE_QUEUE_DEPTH, MonitoredCounterTester::TEST_INSTANCE_ID);
+    // Without a connection the monitor cannot report; a disabled monitor never tries
+    ASSERT_FALSE(fresh.isConnected_faultOut_OutputPort(0));
+    for (U32 i = 0; i < (DEFAULT_COUNT_THRESHOLD + DEFAULT_SYSTEM_ERROR_THRESHOLD); i++) {
+        fresh.get_run_InputPort(0)->invoke(0);
+        (void)fresh.doDispatch();
+    }
+    fresh.deinit();
+}
+
 void MonitoredCounterTester ::testMonitoringDisabled() {
     this->setMonitoring(Fw::Enabled::DISABLED);
     ASSERT_EVENTS_MonitoringSet_SIZE(1);
@@ -168,6 +185,20 @@ void MonitoredCounterTester ::testParameters() {
     ASSERT_TLM_Monitor(0, RED);
     ASSERT_from_faultOut_SIZE(1);
     ASSERT_from_faultOut(0, COUNTER_HIGH);
+    this->clearHistory();
+
+    // A runtime parameter update (PRM_SET path) re-caches the thresholds: raising COUNT_THRESHOLD above the
+    // current count makes the test pass again and the monitor recovers without a reset
+    const U32 raisedThreshold = countThreshold + systemThreshold + 10;
+    this->paramSet_COUNT_THRESHOLD(raisedThreshold, Fw::ParamValid::VALID);
+    this->paramSend_COUNT_THRESHOLD(0, 0);
+    this->dispatchAll();
+    ASSERT_CMD_RESPONSE_SIZE(1);
+    ASSERT_CMD_RESPONSE(0, MonitoredCounter::OPCODE_COUNT_THRESHOLD_SET, 0, Fw::CmdResponse::OK);
+    this->cycleTo(countThreshold + systemThreshold + systemThreshold);
+    ASSERT_TLM_Monitor_SIZE(1);
+    ASSERT_TLM_Monitor(0, GREEN);
+    ASSERT_from_faultOut_SIZE(0);
 }
 
 // ----------------------------------------------------------------------

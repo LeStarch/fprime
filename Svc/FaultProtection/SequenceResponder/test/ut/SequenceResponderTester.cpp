@@ -6,6 +6,8 @@
 
 #include "SequenceResponderTester.hpp"
 
+#include "Fw/Types/String.hpp"
+
 namespace Svc {
 
 namespace FaultProtection {
@@ -34,7 +36,7 @@ SequenceResponderTester ::SequenceResponderTester()
       component("SequenceResponder") {
     this->initComponents();
     this->connectPorts();
-    this->component.configure(SEQUENCE_DIRECTORY);
+    this->component.configure(Fw::String(SEQUENCE_DIRECTORY));
 }
 
 SequenceResponderTester ::~SequenceResponderTester() {
@@ -141,6 +143,28 @@ void SequenceResponderTester ::testUnconnectedSequencer() {
 // ----------------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------------
+
+void SequenceResponderTester ::testFileNameTooLong() {
+    // A directory filling the file name string leaves no room for "/<step>.seq"
+    char directory[Fw::FileNameString::STRING_SIZE] = {};
+    for (FwSizeType i = 0; i < (sizeof(directory) - 1); i++) {
+        directory[i] = 'd';
+    }
+    this->component.configure(Fw::FileNameString(directory));
+
+    this->invoke_to_faultResponseDispatch(0, SEQUENCE_RESPONSE, RUN_SEQUENCE, FaultConfig::Context());
+    ASSERT_EVENTS_SequenceFileNameTooLong_SIZE(1);
+    ASSERT_EVENTS_SequenceFileNameTooLong(0, RUN_SEQUENCE);
+    ASSERT_EVENTS_SequenceStarted_SIZE(0);
+    ASSERT_from_seqRunOut_SIZE(0);
+    ASSERT_from_faultResponseComplete_SIZE(1);
+    ASSERT_from_faultResponseComplete(0, Fw::Success::FAILURE, SEQUENCE_RESPONSE, RUN_SEQUENCE);
+    this->clearHistory();
+
+    // The responder is not left busy by the failed dispatch
+    this->component.configure(Fw::String(SEQUENCE_DIRECTORY));
+    this->dispatch(SEQUENCE_RESPONSE, RUN_SEQUENCE, RUN_SEQUENCE_FILE);
+}
 
 void SequenceResponderTester ::dispatch(const FaultConfig::Response& response,
                                         const FaultConfig::Step& step,

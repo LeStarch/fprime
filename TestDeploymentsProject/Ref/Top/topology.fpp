@@ -106,6 +106,7 @@ module Ref {
       #connection to FileManager listing feature command for sequencing
       rateGroup2Comp.RateGroupMemberOut[5] -> FileHandling.Subtopology.fileManagerSchedIn
       rateGroup2Comp.RateGroupMemberOut[6] -> fpSeq.schedIn
+      rateGroup2Comp.RateGroupMemberOut[7] -> Svc.FaultProtection.Subtopology.rebootResponderRun
 
       # Rate group 3
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup3] -> rateGroup3Comp.CycleIn
@@ -117,7 +118,6 @@ module Ref {
       rateGroup3Comp.RateGroupMemberOut[5] -> DataProducts.Subtopology.dpWriterSchedIn
       rateGroup3Comp.RateGroupMemberOut[6] -> DataProducts.Subtopology.dpMgrSchedIn
       rateGroup3Comp.RateGroupMemberOut[7] -> CdhCore.Subtopology.eventsRun
-      rateGroup3Comp.RateGroupMemberOut[8] -> CdhCore.fatalHandler.run
       #rateGroup3Comp.RateGroupMemberOut[8] -> DpCompression.Subtopology.dpZLibBufferManagerSchedIn
     }
 

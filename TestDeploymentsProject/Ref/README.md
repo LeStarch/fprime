@@ -73,6 +73,15 @@ cd fprime/TestDeploymentsProject/build-artifacts/<platform>/bin/
 ./Ref -a 127.0.0.1 -p 50000
 ```
 
+## Fault Protection Demonstration
+
+The Ref includes the `Svc.FaultProtection` subtopology with a `MonitoredCounter` example: the counter climbs once
+per second, its monitor reports the `COUNTER_HIGH` fault, and the `FaultManager` responds by running the
+`RESET_COUNT_SEQUENCE` and `ACKNOWLEDGE_SEQUENCE` sequences on the dedicated `fpSeq` sequencer. FATAL events are
+routed through `FatalToFault` to a `REBOOT_RESPONSE` that terminates the process. See
+[`MonitoredCounter/docs/sdd.md`](MonitoredCounter/docs/sdd.md) for the sequence compilation steps and
+`test/int/test_fault_protection.py` for the automated flow.
+
 ## Quick Tips
 
 - The F´ GDS defaults to port 50000. More information can be found with `fprime-gds --help`

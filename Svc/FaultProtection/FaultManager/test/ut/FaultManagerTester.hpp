@@ -81,6 +81,13 @@ class FaultManagerTester final : public FaultManagerGTestBase {
 
     //! A failed response to FAULT_RESPONSE_FAILURE does not escalate (no recursion)
     void testResponseFailureNoRecursion();
+    void testMultiStepResponse();
+    void testDeferThenContinue();
+    void testStepTimeout();
+    void testStepPortUnconnected();
+    void testIgnoredReportThrottle();
+    void testDisableClearsLatch();
+    void testTableParameters();
 
   private:
     // ----------------------------------------------------------------------
@@ -106,7 +113,7 @@ class FaultManagerTester final : public FaultManagerGTestBase {
     // ----------------------------------------------------------------------
 
     //! Dispatch every message queued on the component (ports, commands, and state machine signals)
-    void dispatchAll();
+    void dispatchAll(FaultManager& target);
 
     //! Report a fault and dispatch the internal report handling
     void report(const FaultConfig::Fault& fault);
@@ -157,6 +164,7 @@ class FaultManagerTester final : public FaultManagerGTestBase {
 
     //! Port number of the most recent step dispatch
     FwIndexType m_last_dispatch_port;
+    FwIndexType m_last_cancel_port;
 };
 
 }  // namespace FaultProtection

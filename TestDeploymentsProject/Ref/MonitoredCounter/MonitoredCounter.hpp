@@ -18,7 +18,7 @@ class MonitoredCounter final : public MonitoredCounterComponentBase {
     // ----------------------------------------------------------------------
 
     //! Construct MonitoredCounter object
-    MonitoredCounter(const char* const compName  //!< The component name
+    explicit MonitoredCounter(const char* const compName  //!< The component name
     );
 
     //! Destroy MonitoredCounter object

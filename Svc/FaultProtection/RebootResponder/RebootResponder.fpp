@@ -2,12 +2,16 @@ module Svc {
 module FaultProtection {
     @* Reboots the FSW in response to a fault
     @*
-    @* A SyncResponder that performs a hard reboot when dispatched. The reboot is announced via event, delayed by a
-    @* configurable interval to allow the announcement to downlink, and then performed by the (overridable)
-    @* `doReboot` hook. The step never completes: the reboot ends the running software. Cancel requests are refused
-    @* since a reboot is irrevocable once requested.
+    @* A SyncResponder that performs a hard reboot when dispatched. The reboot is announced via event on dispatch and
+    @* performed on the `run` tick a configurable number of ticks later, allowing the announcement to downlink without
+    @* blocking the dispatching thread. The reboot itself is the (overridable) `doReboot` hook. The step never
+    @* completes: the reboot ends the running software. Cancel requests are refused since a reboot is irrevocable
+    @* once requested.
     passive component RebootResponder {
         import SyncResponder
+
+        @ Rate group tick driving the delay between the reboot announcement and the reboot
+        guarded input port run: Svc.Sched
 
         @ Hard reboot requested by a fault response step
         event RebootRequested(response: FaultConfig.Response, step: FaultConfig.Step) \

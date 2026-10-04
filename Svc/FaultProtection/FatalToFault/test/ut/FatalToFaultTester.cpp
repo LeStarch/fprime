@@ -23,7 +23,8 @@ FatalToFaultTester ::FatalToFaultTester()
     : FatalToFaultGTestBase("FatalToFaultTester", FatalToFaultTester::MAX_HISTORY_SIZE), component("FatalToFault") {
     this->initComponents();
     this->connectPorts();
-    this->component.configure(FALLBACK_TICKS);
+    this->component.faultsReported = 0;
+    this->component.configure(Fw::TimeInterval(0, FALLBACK_DELAY_USECONDS));
 }
 
 FatalToFaultTester ::~FatalToFaultTester() {
@@ -34,58 +35,41 @@ FatalToFaultTester ::~FatalToFaultTester() {
 // Tests
 // ----------------------------------------------------------------------
 
-void FatalToFaultTester ::testFatalReportsFault() {
+void FatalToFaultTester ::testFatalReportsFaultThenFallsBack() {
     this->invoke_to_FatalReceive(0, SOME_FATAL_ID);
     ASSERT_from_faultOut_SIZE(1);
     ASSERT_from_faultOut(0, FATAL_OCCURRED);
-    ASSERT_EQ(this->component.fallbackCount, 0);
-}
-
-void FatalToFaultTester ::testTicksWithoutFatal() {
-    this->tick(FALLBACK_TICKS * 10);
-    ASSERT_from_faultOut_SIZE(0);
-    ASSERT_EQ(this->component.fallbackCount, 0);
-}
-
-void FatalToFaultTester ::testFallbackCountdown() {
-    this->invoke_to_FatalReceive(0, SOME_FATAL_ID);
-    this->tick(FALLBACK_TICKS - 1);
-    ASSERT_EQ(this->component.fallbackCount, 0);
-    this->tick(1);
+    // The call returns only once the fallback has run (the test fallback does not end the process)
     ASSERT_EQ(this->component.fallbackCount, 1);
-    // Still running (the test fallback does not end the process): the fallback keeps being requested
-    this->tick(1);
-    ASSERT_EQ(this->component.fallbackCount, 2);
+    // The fault was reported before the thread was parked and the fallback invoked
+    ASSERT_EQ(this->component.faultsReportedAtFallback, 1);
 }
 
 void FatalToFaultTester ::testRepeatedFatal() {
     this->invoke_to_FatalReceive(0, SOME_FATAL_ID);
-    this->tick(FALLBACK_TICKS - 1);
     this->invoke_to_FatalReceive(0, SOME_FATAL_ID + 1);
     // FaultManager latches the fault; every FATAL is still forwarded so the report cannot be lost
     ASSERT_from_faultOut_SIZE(2);
     ASSERT_from_faultOut(1, FATAL_OCCURRED);
-    // The countdown runs from the first FATAL
-    this->tick(1);
-    ASSERT_EQ(this->component.fallbackCount, 1);
+    ASSERT_EQ(this->component.fallbackCount, 2);
 }
 
 void FatalToFaultTester ::testUnconnectedFallback() {
     TestFatalToFault bare("bare");
     bare.init(TEST_INSTANCE_ID);
+    bare.faultsReported = 0;
     bare.get_FatalReceive_InputPort(0)->invoke(SOME_FATAL_ID);
     ASSERT_EQ(bare.fallbackCount, 1);
-    ASSERT_from_faultOut_SIZE(0);
+    ASSERT_EQ(bare.faultsReportedAtFallback, 0);
 }
 
 // ----------------------------------------------------------------------
-// Helpers
+// Handlers
 // ----------------------------------------------------------------------
 
-void FatalToFaultTester ::tick(FwSizeType count) {
-    for (FwSizeType i = 0; i < count; i++) {
-        this->invoke_to_run(0, 0);
-    }
+void FatalToFaultTester ::from_faultOut_handler(FwIndexType portNum, const FaultConfig::Fault& id) {
+    this->component.faultsReported++;
+    this->pushFromPortEntry_faultOut(id);
 }
 
 }  // namespace FaultProtection

@@ -57,6 +57,9 @@ class MonitoredCounterTester final : public MonitoredCounterGTestBase {
     //! RESET_COUNT clears the count and the monitor recovers; a new excursion reports again
     void testResetRecovers();
 
+    //! Monitoring starts disabled: a fresh component counts without evaluating the monitor
+    void testDefaultDisabled();
+
     //! Disabled monitoring turns the monitor BLACK and suspends error counting
     void testMonitoringDisabled();
 

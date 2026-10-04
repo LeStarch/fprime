@@ -8,7 +8,7 @@ Translates incoming fault reports into a series of fault response step dispatche
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | SVC_FAULTMANAGER_001 | FaultManager shall have a synchronous fault report input port carrying a project-configured `FaultConfig.Fault` enumeration value identifying the fault.  | Unit-Test    |
 | SVC_FAULTMANAGER_002 | FaultManager shall map each fault to a response and each response to an ordered list of steps per the project `FaultConfig` tables.                       | Unit-Test    |
-| SVC_FAULTMANAGER_003 | FaultManager shall accept the fault response, response definition, and step definition tables as parameters defaulting to the `FaultConfig` tables.      | Unit-Test    |
+| SVC_FAULTMANAGER_003 | FaultManager shall accept as parameters the fault response table (`FAULT_RESPONSE_TABLE`), the per-response enabled flags (`RESPONSE_TABLE`), and the per-step failure modes (`STEP_TABLE`), defaulting to the `FaultConfig` tables; the response and step definition tables are static configuration. | Unit-Test    |
 | SVC_FAULTMANAGER_004 | Upon selecting a response, FaultManager shall dispatch its steps sequentially, dispatching each step after the completion of the previous step.            | Unit-Test    |
 | SVC_FAULTMANAGER_005 | For each step, FaultManager shall dispatch to the step's configured port passing the response, step, and project-configured context.                       | Unit-Test    |
 | SVC_FAULTMANAGER_006 | FaultManager shall validate fault, response, and step values from ports and commands against the configured enumerations, rejecting out-of-range values.  | Unit-Test    |
@@ -37,17 +37,21 @@ state. Each `run` tick advances the `FaultManagerStateMachine`:
 ```mermaid
 stateDiagram-v2
     [*] --> IDLE
-    IDLE --> COUNTDOWN: Tick [hasReport]
+    IDLE --> CHECK_REPORT: Tick
+    CHECK_REPORT --> COUNTDOWN: [hasReport]
+    CHECK_REPORT --> IDLE: [!hasReport]
     COUNTDOWN --> COUNTDOWN: Tick [!countdownExpired]
     COUNTDOWN --> RESPONSE: Tick [countdownExpired] / selectResponse, dispatchStep
     RESPONSE --> RESPONSE: StepSuccessful / StepDeferredFailure [!responseDone] / dispatchStep
-    RESPONSE --> IDLE: StepSuccessful [responseDone] / completeResponse
-    RESPONSE --> IDLE: StepFailed / completeResponse (FAULT_RESPONSE_FAILURE latched)
-    RESPONSE --> IDLE: Preempt / cancel active step, completeResponse
-    IDLE --> COUNTDOWN: (next Tick finds the latched report)
+    RESPONSE --> CHECK_REPORT: StepSuccessful [responseDone] / completeResponse
+    RESPONSE --> CHECK_REPORT: StepFailed / completeResponse (FAULT_RESPONSE_FAILURE latched)
+    RESPONSE --> CHECK_REPORT: Preempt / cancel active step, completeResponse
+    RESPONSE --> RESPONSE: Tick / tickStep (step timeout)
 ```
 
-1. **IDLE**: each tick checks for a latched report.
+1. **IDLE**: each tick enters `CHECK_REPORT`, which scans for a latched report in precedence order. A completed
+   response also returns through `CHECK_REPORT`, so a report latched during the response starts its countdown
+   without waiting for another tick.
 2. **COUNTDOWN**: `FaultConfig.RESPONSE_COUNTDOWN_TICKS` ticks allow further reports to accumulate.
 3. **RESPONSE**: the enabled fault of highest precedence is selected; its latch is cleared; the response's steps are
    dispatched in order on `stepDispatchOut[<step port>]`. A completion on `stepCompletionIn` for the active step
@@ -60,7 +64,12 @@ stateDiagram-v2
    responded to after the preempting fault.
 
 Completions for a step other than the active one are logged (`UnexpectedStepCompleted`) and ignored. Unconnected
-step ports are treated as step failures (`StepPortUnconnected`).
+step ports are treated as step failures (`StepPortUnconnected`). A step whose `timeoutTicks` is nonzero must
+complete within that many `run` ticks of its dispatch; otherwise the step is canceled (`stepCancelOut`), logged
+(`StepTimedOut`), and failed per its failure mode. When the response to `FAULT_RESPONSE_FAILURE` itself fails there
+is nothing further to escalate to within the engine: `EscalationExhausted` is emitted and the `virtual
+escalationExhausted()` hook is called so that a project may take a terminal action (the framework default is a
+no-op, relying on the deployment to map `FAULT_RESPONSE_FAILURE` to a reboot).
 
 `FaultReported` is bounded by latching (one per fault per response) and is not throttled. The events for reports
 that are not acted on (`FaultIgnored`, `FaultDisabled`, `FaultInvalid`) are throttled, and the throttle is cleared on
@@ -85,9 +94,38 @@ silenced for the remainder of the mission.
 | `SET_RESPONSE_ENABLED`     | Enable/disable a response (updates `RESPONSE_TABLE`)                      |
 | `UPDATE_STEP_FAILURE_MODE` | Set the failure mode of a step (updates `STEP_TABLE`)                        |
 
-Out-of-range enumeration values (e.g. `NUM_FAULTS`) respond `VALIDATION_ERROR` with `InvalidCommandArgument`.
+Out-of-range enumeration values (e.g. `NUM_FAULTS`) respond `VALIDATION_ERROR` with `InvalidFaultArgument`,
+`InvalidResponseArgument`, or `InvalidStepArgument` carrying the rejected value.
 
-### 2.3 Telemetry
+### 2.3 Events
+
+| Name                       | Severity      | Emitted when                                                                  |
+| -------------------------- | ------------- | ----------------------------------------------------------------------------- |
+| `FaultReported`            | activity high | A report is accepted and latched                                              |
+| `FaultIgnored`             | warning low   | A report of an already latched fault (throttled, cleared each tick)           |
+| `FaultDisabled`            | warning low   | A report of a disabled fault (throttled, cleared each tick)                   |
+| `FaultInvalid`             | warning high  | A report with an unconfigured fault id (throttled, cleared each tick)         |
+| `ResponseStarted`          | activity high | A response is selected for a fault                                            |
+| `ResponseCompleted`        | activity high | All steps of a response completed                                             |
+| `ResponseFailed`           | warning high  | A response ended in failure (`FAULT` or deferred step failure)               |
+| `ResponsePreempted`        | warning low   | A higher-precedence report canceled the active response                       |
+| `EscalationExhausted`      | warning high  | The response to `FAULT_RESPONSE_FAILURE` itself failed                        |
+| `StepStarted`              | activity low  | A step is dispatched                                                          |
+| `StepCompleted`            | activity low  | A step completed successfully                                                 |
+| `StepFailed`               | warning high  | A step completed with failure, with the failure mode applied                  |
+| `StepTimedOut`             | warning high  | A step did not complete within its `timeoutTicks`                             |
+| `StepPortUnconnected`      | warning high  | A step's dispatch port is unconnected (step fails)                            |
+| `UnexpectedStepCompleted`  | warning high  | A completion arrived for a step other than the active one                     |
+| `StepCancel`               | activity high | A cancel was sent to the active step's port                                   |
+| `StepSkipped`              | activity low  | A step of a disabled response was walked without dispatch                     |
+| `FaultEnabledSet`          | activity high | `SET_FAULT_ENABLED` accepted                                                  |
+| `ResponseEnabledSet`       | activity high | `SET_RESPONSE_ENABLED` accepted                                               |
+| `StepFailureModeSet`       | activity high | `UPDATE_STEP_FAILURE_MODE` accepted                                           |
+| `InvalidFaultArgument`     | warning low   | A command carried an out-of-range fault                                       |
+| `InvalidResponseArgument`  | warning low   | A command carried an out-of-range response                                    |
+| `InvalidStepArgument`      | warning low   | A command carried an out-of-range step                                        |
+
+### 2.4 Telemetry
 
 | Name                 | Description                       |
 | -------------------- | --------------------------------- |
@@ -95,6 +133,18 @@ Out-of-range enumeration values (e.g. `NUM_FAULTS`) respond `VALIDATION_ERROR` w
 | `FaultsIgnored`      | Reports ignored (latched/disabled/invalid) |
 | `ResponsesCompleted` | Responses completed successfully  |
 | `ResponsesFailed`    | Responses completed with failure  |
+
+### 2.5 Parameters
+
+| Name                   | Type                 | Description                                                    |
+| ---------------------- | -------------------- | -------------------------------------------------------------- |
+| `FAULT_RESPONSE_TABLE` | `FaultResponseTable` | Precedence, response, and enabled flag per fault               |
+| `RESPONSE_TABLE`       | `ResponsesEnabled`   | Enabled flag per response                                      |
+| `STEP_TABLE`           | `StepFailureModes`   | Failure mode per step                                          |
+
+The parameters are external: the component is its own parameter delegate so that the tables default to the
+`FaultConfig` constants when the parameter database holds no valid value. The commands in 2.2 update the cached
+tables and the deployment's `*_PRM_SAVE` commands persist them.
 
 ## 3. Configuration
 
@@ -113,7 +163,7 @@ default and `TestDeploymentsProject/Ref/Config/FaultConfig.fpp` for an example o
 | `Context`                   | Project-defined structure forwarded with each dispatch                                   |
 | `FaultResponseTable`        | One `FaultResponseEntry` (precedence, response, enabled) per fault                       |
 | `ResponseDefinitionTable`   | One `ResponseDefinitionEntry` (steps) per response                                       |
-| `StepDefinitionTable`       | One `StepDefinitionEntry` (failure mode, port, context) per step except `SKIP`           |
+| `StepDefinitionTable`       | One `StepDefinitionEntry` (failure mode, port, timeout ticks, context) per step except `SKIP` |
 
 The tables are loaded at construction and may be overridden by the `FAULT_RESPONSE_TABLE`, `RESPONSE_TABLE`, and
 `STEP_TABLE` parameters when those are valid in the parameter database. The `Svc.FaultProtection.Subtopology`

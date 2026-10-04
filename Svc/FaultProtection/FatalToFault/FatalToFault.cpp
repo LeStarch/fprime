@@ -9,6 +9,7 @@
 #include <cstdlib>
 
 #include "Fw/Logger/Logger.hpp"
+#include "Os/Task.hpp"
 
 namespace Svc {
 
@@ -19,15 +20,12 @@ namespace FaultProtection {
 // ----------------------------------------------------------------------
 
 FatalToFault ::FatalToFault(const char* const compName)
-    : FatalToFaultComponentBase(compName),
-      m_fallback_ticks(DEFAULT_FALLBACK_TICKS),
-      m_armed(false),
-      m_ticks_since_fatal(0) {}
+    : FatalToFaultComponentBase(compName), m_fallback_delay(DEFAULT_FALLBACK_SECONDS, 0) {}
 
 FatalToFault ::~FatalToFault() {}
 
-void FatalToFault ::configure(FwSizeType fallbackTicks) {
-    this->m_fallback_ticks = fallbackTicks;
+void FatalToFault ::configure(const Fw::TimeInterval& fallbackDelay) {
+    this->m_fallback_delay = fallbackDelay;
 }
 
 // ----------------------------------------------------------------------
@@ -39,24 +37,15 @@ void FatalToFault ::FatalReceive_handler(FwIndexType portNum, FwEventIdType Id) 
     Fw::Logger::log("FATAL event 0x%" PRI_FwEventIdType " received: reporting fault FATAL_OCCURRED\n", Id);
     if (this->isConnected_faultOut_OutputPort(0)) {
         this->faultOut_out(0, FaultConfig::Fault::FATAL_OCCURRED);
-        this->m_armed = true;
+        // The asserting thread must not resume: park it while the fault response (typically a reboot) runs
+        (void)Os::Task::delay(this->m_fallback_delay);
+        Fw::Logger::log("FATAL: fault response did not end the software within %" PRIu32 ".%06" PRIu32
+                        " s; invoking fallback\n",
+                        this->m_fallback_delay.getSeconds(), this->m_fallback_delay.getUSeconds());
     } else {
         Fw::Logger::log("FATAL: faultOut is not connected; invoking fallback immediately\n");
-        this->fallback();
     }
-}
-
-void FatalToFault ::run_handler(FwIndexType portNum, U32 context) {
-    if (not this->m_armed) {
-        return;
-    }
-    this->m_ticks_since_fatal++;
-    if (this->m_ticks_since_fatal >= this->m_fallback_ticks) {
-        Fw::Logger::log("FATAL: fault response did not end the software within %" PRI_FwSizeType
-                        " ticks; invoking fallback\n",
-                        this->m_fallback_ticks);
-        this->fallback();
-    }
+    this->fallback();
 }
 
 // ----------------------------------------------------------------------

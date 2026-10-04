@@ -7,8 +7,11 @@ The first resets the counter, correcting the fault.
 
 The response sequences must be compiled and placed where the deployment expects them (see RefTopology.cpp):
 
-    fprime-seqgen --dictionary <dictionary> Ref/sequences/RESET_COUNT_SEQUENCE.seq /tmp/uplink/RESET_COUNT_SEQUENCE.seq
-    fprime-seqgen --dictionary <dictionary> Ref/sequences/ACKNOWLEDGE_SEQUENCE.seq /tmp/uplink/ACKNOWLEDGE_SEQUENCE.seq
+    fprime-seqgen --dictionary <dictionary> Ref/sequences/RESET_COUNT_SEQUENCE.seq /tmp/fp-seq/RESET_COUNT_SEQUENCE.seq
+    fprime-seqgen --dictionary <dictionary> Ref/sequences/ACKNOWLEDGE_SEQUENCE.seq /tmp/fp-seq/ACKNOWLEDGE_SEQUENCE.seq
+
+Monitoring of the counter starts disabled (so a Ref without the sequences installed does not fault on its own); the
+tests enable it with SET_MONITORING. The directory is kept short: CmdSequencer bounds the path to 40 characters.
 """
 
 import subprocess
@@ -16,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-SEQUENCE_DIRECTORY = Path("/tmp/uplink")
+SEQUENCE_DIRECTORY = Path("/tmp/fp-seq")
 SEQUENCE_SOURCES = Path(__file__).parent.parent.parent / "sequences"
 STEPS = ["RESET_COUNT_SEQUENCE", "ACKNOWLEDGE_SEQUENCE"]
 
@@ -40,6 +43,14 @@ def response_sequences(fprime_test_api_session):
             ]
         )
         assert result.returncode == 0, f"Failed to compile {step}.seq"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def monitoring_enabled(fprime_test_api_session, response_sequences):
+    """Enable the counter monitor once the response sequences are in place"""
+    counter = fprime_test_api_session.get_mnemonic("Ref.MonitoredCounter")
+    fprime_test_api_session.send_and_assert_command(f"{counter}.SET_MONITORING", ["ENABLED"], max_delay=5)
+    fprime_test_api_session.clear_histories()
 
 
 def names(fprime_test_api):
@@ -169,14 +180,14 @@ def test_disabled_response_skips_steps(fprime_test_api):
 def test_invalid_command_arguments_rejected(fprime_test_api):
     """Out-of-range enumeration values from the ground are rejected with a validation error, not an assertion"""
     FAULT_MANAGER, SEQUENCE_RESPONDER, COUNTER = names(fprime_test_api)
-    for command, args in [
-        (f"{FAULT_MANAGER}.SET_FAULT_ENABLED", ["NUM_FAULTS", "DISABLED"]),
-        (f"{FAULT_MANAGER}.SET_RESPONSE_ENABLED", ["NUM_RESPONSES", "DISABLED"]),
-        (f"{FAULT_MANAGER}.UPDATE_STEP_FAILURE_MODE", ["SKIP", "IGNORE"]),
+    for command, args, event in [
+        (f"{FAULT_MANAGER}.SET_FAULT_ENABLED", ["NUM_FAULTS", "DISABLED"], "InvalidFaultArgument"),
+        (f"{FAULT_MANAGER}.SET_RESPONSE_ENABLED", ["NUM_RESPONSES", "DISABLED"], "InvalidResponseArgument"),
+        (f"{FAULT_MANAGER}.UPDATE_STEP_FAILURE_MODE", ["SKIP", "IGNORE"], "InvalidStepArgument"),
     ]:
         fprime_test_api.clear_histories()
         fprime_test_api.send_command(command, args=args)
-        fprime_test_api.assert_event(f"{FAULT_MANAGER}.InvalidCommandArgument", timeout=5)
+        fprime_test_api.assert_event(f"{FAULT_MANAGER}.{event}", timeout=5)
         fprime_test_api.assert_event("CdhCore.cmdDisp.OpCodeError", timeout=5)
     # The system is still protected
     await_excursion(fprime_test_api)

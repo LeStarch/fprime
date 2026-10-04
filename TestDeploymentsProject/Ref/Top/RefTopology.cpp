@@ -13,15 +13,24 @@
 #include <Ref/Top/RefTopologyAc.hpp>
 
 // Necessary project-specified types
+#include <Fw/Time/TimeInterval.hpp>
+#include <Fw/Types/FileNameString.hpp>
 #include <Fw/Types/MallocAllocator.hpp>
 
 // Allows easy reference to objects in FPP/autocoder required namespaces
 using namespace Ref;
 
-// Directory holding fault response sequences (<directory>/<step name>.seq)
-static const char* const FAULT_SEQUENCE_DIRECTORY = "/tmp/uplink";
-// Rate group 3 ticks (4 s each) between a FATAL and the abort fallback
-static const FwSizeType FATAL_FALLBACK_TICKS = 5;
+// Size of the buffer each command sequencer loads sequences into
+static constexpr FwSizeType SEQUENCER_BUFFER_SIZE = 5 * 1024;
+// Directory holding fault response sequences (<directory>/<step name>.seq); separate from the uplink sandbox so that
+// uplinked files cannot replace a fault response
+// Kept short: CmdSequencer bounds "<directory>/<step>.seq" to FW_CMD_STRING_MAX_SIZE (40) characters
+static const char* const FAULT_SEQUENCE_DIRECTORY = "/tmp/fp-seq";
+// Interval the asserting thread is parked after a FATAL before the abort fallback; covers the response countdown
+// (2 s), the reboot delay (one 0.5 Hz tick), and downlink of the announcement
+static const Fw::TimeInterval FATAL_FALLBACK_DELAY(20, 0);
+// Rate group 2 ticks (2 s each) between the reboot announcement and the reboot, allowing the announcement to downlink
+static constexpr FwSizeType REBOOT_DELAY_TICKS = 1;
 
 // Instantiate a malloc allocator for cmdSeq buffer allocation
 Fw::MallocAllocator mallocator;
@@ -57,13 +66,14 @@ void configureTopology() {
     rateGroup3Comp.configure(rateGroup3Context);
 
     // Command sequencer needs to allocate memory to hold contents of command sequences
-    cmdSeq.allocateBuffer(0, mallocator, 5 * 1024);
-    fpSeq.allocateBuffer(0, mallocator, 5 * 1024);
+    cmdSeq.allocateBuffer(0, mallocator, SEQUENCER_BUFFER_SIZE);
+    fpSeq.allocateBuffer(0, mallocator, SEQUENCER_BUFFER_SIZE);
 
-    // Fault protection: response sequences live in the uplink sandbox such that they may be uplinked, and a FATAL
-    // falls back to abort when the fault response has not rebooted within the configured ticks
-    Svc::FaultProtection::sequenceResponder.configure(FAULT_SEQUENCE_DIRECTORY);
-    CdhCore::fatalHandler.configure(FATAL_FALLBACK_TICKS);
+    // Fault protection: where response sequences are read from, how long a reboot waits for its announcement to
+    // downlink, and how long a FATAL waits for the fault response before falling back to abort
+    Svc::FaultProtection::sequenceResponder.configure(Fw::FileNameString(FAULT_SEQUENCE_DIRECTORY));
+    Svc::FaultProtection::rebootResponder.configure(REBOOT_DELAY_TICKS);
+    CdhCore::fatalHandler.configure(FATAL_FALLBACK_DELAY);
 
     // Restrict uplinked files to a sandbox directory to prevent path-traversal writes
     FileHandling::fileUplink.configure("/tmp/uplink/");

@@ -28,11 +28,12 @@ class SequenceResponder final : public SequenceResponderComponentBase {
     //! Destroy SequenceResponder object
     ~SequenceResponder();
 
-    //! Configure the directory containing the step sequences (`<directory>/<step name>.seq`)
-    void configure(const char* directory);
+    //! Configure the directory containing the step sequences (`<directory>/<step name>.seq`). Asserts when the
+    //! directory does not fit in a file name string.
+    void configure(const Fw::StringBase& directory);
 
-    //! Build the sequence file name for a step
-    void sequenceFileName(const FaultConfig::Step& step, Fw::FileNameString& fileName) const;
+    //! Build the sequence file name for a step. Returns false when the name does not fit in `fileName`.
+    bool sequenceFileName(const FaultConfig::Step& step, Fw::FileNameString& fileName) const;
 
   private:
     // ----------------------------------------------------------------------
@@ -67,9 +68,8 @@ class SequenceResponder final : public SequenceResponderComponentBase {
     // Member variables
     // ----------------------------------------------------------------------
 
-    Fw::FileNameString m_directory;  //!< Directory containing step sequences
-    Os::Mutex m_lock;                //!< Guards the active step (dispatch and completion arrive on different threads)
-    bool m_active;                   //!< A step's sequence is running
+    Fw::FileNameString m_directory;           //!< Directory containing step sequences
+    bool m_active;                            //!< A step's sequence is running
     FaultConfig::Response m_active_response;  //!< Response of the running step
     FaultConfig::Step m_active_step;          //!< Running step
 };

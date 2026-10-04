@@ -62,6 +62,7 @@ class SequenceResponderTester final : public SequenceResponderGTestBase {
 
     //! A step dispatched with no sequencer connected fails
     void testUnconnectedSequencer();
+    void testFileNameTooLong();
 
   private:
     // ----------------------------------------------------------------------

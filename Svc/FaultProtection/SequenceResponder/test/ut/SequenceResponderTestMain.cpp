@@ -43,6 +43,13 @@ TEST(OffNominal, IdleInputs) {
     tester.testIdleInputs();
 }
 
+TEST(OffNominal, FileNameTooLong) {
+    COMMENT("A sequence file name that does not fit fails the step without truncation");
+    REQUIREMENT("SVC_SEQUENCERESPONDER_007");
+    Svc::FaultProtection::SequenceResponderTester tester;
+    tester.testFileNameTooLong();
+}
+
 TEST(OffNominal, UnconnectedSequencer) {
     COMMENT("A step dispatched with no sequencer connected fails");
     Svc::FaultProtection::SequenceResponderTester tester;

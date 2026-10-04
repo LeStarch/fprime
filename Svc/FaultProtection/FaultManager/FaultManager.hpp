@@ -19,7 +19,7 @@ namespace Svc {
 
 namespace FaultProtection {
 
-class FaultManager final : public FaultManagerComponentBase, public Fw::ParamExternalDelegate {
+class FaultManager : public FaultManagerComponentBase, public Fw::ParamExternalDelegate {
   public:
     //! Sentinel index meaning "no active response"
     static constexpr FwSizeType NO_ACTIVE_INDEX = std::numeric_limits<FwSizeType>::max();
@@ -29,13 +29,14 @@ class FaultManager final : public FaultManagerComponentBase, public Fw::ParamExt
      * component's thread (by the synchronous reportIn handler), hence they alone are atomic.
      */
     struct GovernedState {
-        FwSizeType countdown;              //!< Countdown for delayed response execution
-        Fw::Success response_result;       //!< Result of the response execution
-        FaultConfig::Fault preempted_by;   //!< Fault whose report preempts the active response
-        FwSizeType active_fault_index;     //!< Index (in the fault response table) of the fault being responded to
-        FwSizeType active_response_index;  //!< Index (in the response definition table) of the active response
-        FwSizeType active_step_index;      //!< Index of the next step to dispatch in the active response
-        FaultConfig::Step active_step;     //!< Step currently dispatched and awaiting completion (SKIP when none)
+        FwSizeType countdown = 0;                                          //!< Countdown for delayed response execution
+        Fw::Success response_result = Fw::Success::SUCCESS;                //!< Result of the response execution
+        FaultConfig::Fault preempted_by = FaultConfig::Fault::NUM_FAULTS;  //!< Fault preempting the active response
+        FwSizeType active_fault_index = NO_ACTIVE_INDEX;     //!< Fault response table index of the active fault
+        FwSizeType active_response_index = NO_ACTIVE_INDEX;  //!< Response definition table index of the response
+        FwSizeType active_step_index = 0;                    //!< Index of the next step to dispatch in the response
+        FaultConfig::Step active_step = FaultConfig::Step::SKIP;  //!< Step awaiting completion (SKIP when none)
+        FwSizeType step_timeout = 0;  //!< Ticks remaining before the active step times out (0 when no timeout)
         std::atomic<bool>
             latched_fault_reports[FaultConfig::Fault::NUM_FAULTS];  //!< Faults currently latched, indexed by fault id
     };
@@ -49,7 +50,12 @@ class FaultManager final : public FaultManagerComponentBase, public Fw::ParamExt
     );
 
     //! Destroy FaultManager object
-    ~FaultManager();
+    virtual ~FaultManager();
+
+  protected:
+    //! Hook invoked when the response to FAULT_RESPONSE_FAILURE itself fails and no further escalation exists.
+    //! The default does nothing beyond the EscalationExhausted event; projects may override (e.g. to reset).
+    virtual void escalationExhausted(const FaultConfig::Response& response);
 
   private:
     // ----------------------------------------------------------------------
@@ -161,6 +167,12 @@ class FaultManager final : public FaultManagerComponentBase, public Fw::ParamExt
         Svc_FaultProtection_FaultManagerStateMachine::Signal signal  //!< The signal
         ) override;
 
+    //! Implementation for action tickStep of state machine Svc_FaultProtection_FaultManagerStateMachine
+    void Svc_FaultProtection_FaultManagerStateMachine_action_tickStep(
+        SmId smId,                                                   //!< The state machine id
+        Svc_FaultProtection_FaultManagerStateMachine::Signal signal  //!< The signal
+        ) override;
+
     // ----------------------------------------------------------------------
     // Implementations for internal state machine guards
     // ----------------------------------------------------------------------
@@ -192,6 +204,9 @@ class FaultManager final : public FaultManagerComponentBase, public Fw::ParamExt
 
     //! Cancel the step awaiting completion (if any) through its responder's cancel port
     void cancelActiveStep();
+
+    //! Request cancellation of a step through its responder's cancel port
+    void cancelStep(const FaultConfig::Step& step);
 
     //! Report a fault from within the component (used for FAULT_RESPONSE_FAILURE)
     void reportInternalFault(const FaultConfig::Fault& fault);

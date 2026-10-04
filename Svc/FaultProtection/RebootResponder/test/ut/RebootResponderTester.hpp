@@ -26,6 +26,9 @@ class RebootResponderTester final : public RebootResponderGTestBase {
     // Instance ID supplied to the component instance under test
     static const FwEnumStoreType TEST_INSTANCE_ID = 0;
 
+    // Reboot delay (run ticks) used by the tests
+    static const FwSizeType REBOOT_DELAY_TICKS = 2;
+
   public:
     // ----------------------------------------------------------------------
     // Construction and destruction
@@ -42,8 +45,14 @@ class RebootResponderTester final : public RebootResponderGTestBase {
     // Tests
     // ----------------------------------------------------------------------
 
-    //! A dispatched step announces the reboot and invokes the reboot hook
+    //! A dispatched step announces the reboot and invokes the reboot hook once the delay has elapsed
     void testDispatchReboots();
+
+    //! Ticks without a request never reboot
+    void testTicksWithoutRequest();
+
+    //! A second request while a reboot is pending does not restart the delay
+    void testRepeatedRequest();
 
     //! A reboot hook that returns results in a failed step
     void testHookReturnFails();
@@ -71,6 +80,9 @@ class RebootResponderTester final : public RebootResponderGTestBase {
 
     //! Initialize components
     void initComponents();
+
+    //! Tick the component `count` times
+    void tick(FwSizeType count);
 
   private:
     // ----------------------------------------------------------------------

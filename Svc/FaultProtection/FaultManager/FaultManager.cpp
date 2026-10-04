@@ -35,12 +35,6 @@ FaultManager ::FaultManager(const char* const compName)
             this->m_step_parameter[entry.get_step()] = entry.get_failureMode();
         }
     }
-    this->m_sm_state.countdown = 0;
-    this->m_sm_state.response_result = Fw::Success::SUCCESS;
-    this->m_sm_state.active_fault_index = NO_ACTIVE_INDEX;
-    this->m_sm_state.active_response_index = NO_ACTIVE_INDEX;
-    this->m_sm_state.active_step_index = 0;
-    this->m_sm_state.active_step = FaultConfig::Step::SKIP;
     for (FwSizeType i = 0; i < FaultConfig::Fault::NUM_FAULTS; i++) {
         this->m_sm_state.latched_fault_reports[i] = false;
     }
@@ -48,6 +42,8 @@ FaultManager ::FaultManager(const char* const compName)
 }
 
 FaultManager ::~FaultManager() {}
+
+void FaultManager ::escalationExhausted(const FaultConfig::Response& response) {}
 
 // ----------------------------------------------------------------------
 // Handler implementations for typed input ports
@@ -140,15 +136,13 @@ void FaultManager ::SET_FAULT_ENABLED_cmdHandler(FwOpcodeType opCode,
                                                  const Fw::Enabled& enabled) {
     const FwSizeType index = this->faultToFaultEntryIndex(fault);
     if (index == NO_ACTIVE_INDEX) {
-        this->log_WARNING_LO_InvalidCommandArgument(static_cast<U8>(fault.e));
+        this->log_WARNING_LO_InvalidFaultArgument(static_cast<U8>(fault.e));
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::VALIDATION_ERROR);
         return;
     }
     this->m_fault_parameter[index].set_enabled(enabled);
-    // A disabled fault must not respond when re-enabled on the strength of a stale report
-    if (enabled == Fw::Enabled::DISABLED) {
-        this->m_sm_state.latched_fault_reports[fault.e] = false;
-    }
+    // A report made while disabled (or whose announcement was dropped) must not trigger a response on re-enabling
+    this->m_sm_state.latched_fault_reports[fault.e] = false;
     this->log_ACTIVITY_HI_FaultEnabledSet(fault, enabled);
     this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::OK);
 }
@@ -158,7 +152,7 @@ void FaultManager ::SET_RESPONSE_ENABLED_cmdHandler(FwOpcodeType opCode,
                                                     const FaultConfig::Response& response,
                                                     const Fw::Enabled& enabled) {
     if (not FaultManager::isConfiguredResponse(response)) {
-        this->log_WARNING_LO_InvalidCommandArgument(static_cast<U8>(response.e));
+        this->log_WARNING_LO_InvalidResponseArgument(static_cast<U8>(response.e));
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::VALIDATION_ERROR);
         return;
     }
@@ -172,7 +166,7 @@ void FaultManager ::UPDATE_STEP_FAILURE_MODE_cmdHandler(FwOpcodeType opCode,
                                                         const FaultConfig::Step& step,
                                                         const FaultConfig::FailureMode& failureMode) {
     if (not FaultManager::isConfiguredStep(step)) {
-        this->log_WARNING_LO_InvalidCommandArgument(static_cast<U8>(step.e));
+        this->log_WARNING_LO_InvalidStepArgument(static_cast<U8>(step.e));
         this->cmdResponse_out(opCode, cmdSeq, Fw::CmdResponse::VALIDATION_ERROR);
         return;
     }
@@ -198,7 +192,9 @@ Fw::SerializeStatus FaultManager ::deserializeParam(const FwPrmIdType base_id,
             if ((status == Fw::FW_SERIALIZE_OK) && (not FaultManager::isValidFaultTable(table))) {
                 status = Fw::SerializeStatus::FW_DESERIALIZE_FORMAT_ERROR;
             }
-            if (status == Fw::FW_SERIALIZE_OK) {
+            // Applied for stored (VALID) and model-default (DEFAULT) values; an INVALID store is ignored
+            if ((status == Fw::FW_SERIALIZE_OK) &&
+                ((prmStat == Fw::ParamValid::VALID) || (prmStat == Fw::ParamValid::DEFAULT))) {
                 this->m_fault_parameter = table;
             }
             break;
@@ -206,7 +202,8 @@ Fw::SerializeStatus FaultManager ::deserializeParam(const FwPrmIdType base_id,
         case PARAMID_RESPONSE_TABLE: {
             ResponsesEnabled table;
             status = table.deserializeFrom(buff);
-            if (status == Fw::FW_SERIALIZE_OK) {
+            // No model default: when nothing valid is stored, the construction-time table remains in force
+            if ((status == Fw::FW_SERIALIZE_OK) && (prmStat == Fw::ParamValid::VALID)) {
                 this->m_response_parameter = table;
             }
             break;
@@ -297,7 +294,7 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_selectRe
         if (this->m_sm_state.active_response_index == NO_ACTIVE_INDEX) {
             // Configuration error: a fault maps to an undefined response. Drop the report rather than loop forever.
             Fw::Logger::log("[CRITICAL] FaultManager: fault %d maps to undefined response %d; report discarded\n",
-                            entry.get_fault(), entry.get_response());
+                            static_cast<int>(entry.get_fault()), static_cast<int>(entry.get_response()));
             this->m_sm_state.latched_fault_reports[entry.get_fault()] = false;
             this->m_sm_state.active_fault_index = NO_ACTIVE_INDEX;
         } else {
@@ -329,6 +326,8 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_complete
             this->log_WARNING_HI_ResponseFailed(response, fault);
             if (fault == FaultConfig::Fault::FAULT_RESPONSE_FAILURE) {
                 Fw::Logger::log("[CRITICAL] FaultManager: response to FAULT_RESPONSE_FAILURE failed; not escalating\n");
+                this->log_WARNING_HI_EscalationExhausted(response);
+                this->escalationExhausted(response);
             } else {
                 this->reportInternalFault(FaultConfig::Fault::FAULT_RESPONSE_FAILURE);
             }
@@ -339,6 +338,7 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_complete
     this->m_sm_state.active_response_index = NO_ACTIVE_INDEX;
     this->m_sm_state.active_step_index = 0;
     this->m_sm_state.active_step = FaultConfig::Step::SKIP;
+    this->m_sm_state.step_timeout = 0;
     this->m_sm_state.response_result = Fw::Success::SUCCESS;
 }
 
@@ -377,6 +377,7 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_dispatch
         const FaultConfig::Port& port = step_entry.get_dispatchPort();
         if ((port.e < FaultConfig::Port::NUM_PORTS) &&
             this->isConnected_stepDispatchOut_OutputPort(static_cast<FwIndexType>(port.e))) {
+            this->m_sm_state.step_timeout = step_entry.get_timeoutTicks();
             this->stepDispatchOut_out(static_cast<FwIndexType>(port.e), response, step, step_entry.get_context());
             dispatched = true;
         } else {
@@ -388,6 +389,25 @@ void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_dispatch
     if (not dispatched) {
         this->handleStepResult(Fw::Success::FAILURE);
     }
+}
+
+void FaultManager ::Svc_FaultProtection_FaultManagerStateMachine_action_tickStep(
+    SmId smId,
+    Svc_FaultProtection_FaultManagerStateMachine::Signal signal) {
+    const FaultConfig::Step step = this->m_sm_state.active_step;
+    if ((step == FaultConfig::Step::SKIP) || (this->m_sm_state.step_timeout == 0)) {
+        return;
+    }
+    this->m_sm_state.step_timeout--;
+    if (this->m_sm_state.step_timeout > 0) {
+        return;
+    }
+    const FaultConfig::Response response =
+        this->m_response_definition_table[this->m_sm_state.active_response_index].get_response();
+    const FaultConfig::Fault fault = this->m_fault_parameter[this->m_sm_state.active_fault_index].get_fault();
+    this->log_WARNING_HI_StepTimedOut(step, response, fault);
+    this->cancelStep(step);
+    this->handleStepResult(Fw::Success::FAILURE);
 }
 
 // ----------------------------------------------------------------------
@@ -435,6 +455,7 @@ void FaultManager ::handleStepResult(const Fw::Success& status) {
         this->m_response_definition_table[this->m_sm_state.active_response_index].get_response();
     const FaultConfig::Fault fault = this->m_fault_parameter[this->m_sm_state.active_fault_index].get_fault();
     this->m_sm_state.active_step = FaultConfig::Step::SKIP;
+    this->m_sm_state.step_timeout = 0;
     this->m_sm_state.active_step_index++;
 
     if (status == Fw::Success::SUCCESS) {
@@ -466,9 +487,13 @@ void FaultManager ::handleStepResult(const Fw::Success& status) {
 void FaultManager ::cancelActiveStep() {
     const FaultConfig::Step step = this->m_sm_state.active_step;
     this->m_sm_state.active_step = FaultConfig::Step::SKIP;
-    if (step == FaultConfig::Step::SKIP) {
-        return;
+    this->m_sm_state.step_timeout = 0;
+    if (step != FaultConfig::Step::SKIP) {
+        this->cancelStep(step);
     }
+}
+
+void FaultManager ::cancelStep(const FaultConfig::Step& step) {
     const FwSizeType step_index = this->stepToStepEntryIndex(step);
     if (step_index != NO_ACTIVE_INDEX) {
         const FaultConfig::Port& port = this->m_step_definition_table[step_index].get_dispatchPort();

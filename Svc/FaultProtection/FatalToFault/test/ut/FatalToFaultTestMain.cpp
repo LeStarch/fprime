@@ -7,26 +7,14 @@
 #include "FatalToFaultTester.hpp"
 #include "Fw/Test/UnitTest.hpp"
 
-TEST(Nominal, FatalReportsFault) {
-    COMMENT("A FATAL event is reported as FATAL_OCCURRED");
+TEST(Nominal, FatalReportsFaultThenFallsBack) {
+    COMMENT("A FATAL is reported as FATAL_OCCURRED; the asserting thread is parked, then the fallback is invoked");
     Svc::FaultProtection::FatalToFaultTester tester;
-    tester.testFatalReportsFault();
-}
-
-TEST(Nominal, TicksWithoutFatal) {
-    COMMENT("Ticks without a FATAL never invoke the fallback");
-    Svc::FaultProtection::FatalToFaultTester tester;
-    tester.testTicksWithoutFatal();
-}
-
-TEST(OffNominal, FallbackCountdown) {
-    COMMENT("The fallback is invoked when the fault response has not ended the software in time");
-    Svc::FaultProtection::FatalToFaultTester tester;
-    tester.testFallbackCountdown();
+    tester.testFatalReportsFaultThenFallsBack();
 }
 
 TEST(OffNominal, RepeatedFatal) {
-    COMMENT("Repeated FATALs are forwarded and do not restart the countdown");
+    COMMENT("Repeated FATALs are each forwarded and each invoke the fallback");
     Svc::FaultProtection::FatalToFaultTester tester;
     tester.testRepeatedFatal();
 }

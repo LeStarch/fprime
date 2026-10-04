@@ -46,6 +46,49 @@ TEST(Nominal, ResponseDisabled) {
     tester.testResponseDisabled();
 }
 
+TEST(Nominal, MultiStepResponse) {
+    COMMENT("A multi-step response dispatches each step in order to its configured port");
+    FaultManagerTester tester;
+    tester.testMultiStepResponse();
+}
+
+TEST(OffNominal, DeferThenContinue) {
+    COMMENT("Failure mode DEFER runs the remaining steps before failing the response");
+    FaultManagerTester tester;
+    tester.testDeferThenContinue();
+}
+
+TEST(OffNominal, StepTimeout) {
+    COMMENT("A step without completion within timeoutTicks is canceled and failed");
+    FaultManagerTester tester;
+    tester.testStepTimeout();
+}
+
+TEST(OffNominal, StepPortUnconnected) {
+    COMMENT("A step whose dispatch port is unconnected fails without asserting");
+    FaultManagerTester tester;
+    tester.testStepPortUnconnected();
+}
+
+TEST(OffNominal, IgnoredReportThrottle) {
+    COMMENT("FaultIgnored is throttled and the throttle clears every run tick");
+    FaultManagerTester tester;
+    tester.testIgnoredReportThrottle();
+}
+
+TEST(OffNominal, DisableClearsLatch) {
+    COMMENT("Disabling a latched fault discards its pending report");
+    FaultManagerTester tester;
+    tester.testDisableClearsLatch();
+}
+
+TEST(Nominal, TableParameters) {
+    COMMENT("RESPONSE_TABLE and STEP_TABLE parameters override the defaults when valid");
+    REQUIREMENT("SVC-FAULTMANAGER-003");
+    FaultManagerTester tester;
+    tester.testTableParameters();
+}
+
 TEST(OffNominal, DuplicateReportIgnored) {
     COMMENT("A report of an already latched fault is ignored");
     FaultManagerTester tester;

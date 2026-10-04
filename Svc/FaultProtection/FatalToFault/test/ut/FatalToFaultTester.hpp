@@ -26,8 +26,8 @@ class FatalToFaultTester final : public FatalToFaultGTestBase {
     // Instance ID supplied to the component instance under test
     static const FwEnumStoreType TEST_INSTANCE_ID = 0;
 
-    // Fallback countdown used by the tests
-    static const FwSizeType FALLBACK_TICKS = 3;
+    // Fallback delay used by the tests (microseconds): short, the thread is parked for real
+    static const U32 FALLBACK_DELAY_USECONDS = 10000;
 
   public:
     // ----------------------------------------------------------------------
@@ -45,16 +45,10 @@ class FatalToFaultTester final : public FatalToFaultGTestBase {
     // Tests
     // ----------------------------------------------------------------------
 
-    //! A FATAL is reported as the FATAL_OCCURRED fault
-    void testFatalReportsFault();
+    //! A FATAL is reported as the FATAL_OCCURRED fault, the thread is parked, then the fallback is invoked
+    void testFatalReportsFaultThenFallsBack();
 
-    //! Ticks without a FATAL never invoke the fallback
-    void testTicksWithoutFatal();
-
-    //! The fallback is invoked once the countdown after a FATAL expires
-    void testFallbackCountdown();
-
-    //! Repeated FATALs report once and do not restart the countdown
+    //! Every FATAL is forwarded (the fault system latches); each invokes the fallback after its delay
     void testRepeatedFatal();
 
     //! With no fault reporting connection the fallback is immediate
@@ -64,11 +58,17 @@ class FatalToFaultTester final : public FatalToFaultGTestBase {
     //! FatalToFault whose fallback records the invocation instead of aborting the process
     class TestFatalToFault : public FatalToFault {
       public:
-        explicit TestFatalToFault(const char* const compName) : FatalToFault(compName), fallbackCount(0) {}
-        U32 fallbackCount;  //!< Number of fallback invocations
+        explicit TestFatalToFault(const char* const compName)
+            : FatalToFault(compName), fallbackCount(0), faultsReportedAtFallback(0) {}
+        U32 fallbackCount;             //!< Number of fallback invocations
+        U32 faultsReportedAtFallback;  //!< Value of the recorder at the time of the last fallback
+        U32 faultsReported;            //!< Fault reports observed so far (set by the tester)
 
       protected:
-        void fallback() override { this->fallbackCount++; }
+        void fallback() override {
+            this->fallbackCount++;
+            this->faultsReportedAtFallback = this->faultsReported;
+        }
     };
 
     // ----------------------------------------------------------------------
@@ -81,8 +81,8 @@ class FatalToFaultTester final : public FatalToFaultGTestBase {
     //! Initialize components
     void initComponents();
 
-    //! Tick the component `count` times
-    void tick(FwSizeType count);
+    //! Handler for faultOut: records the report count on the component such that ordering can be checked
+    void from_faultOut_handler(FwIndexType portNum, const FaultConfig::Fault& id) override;
 
   private:
     // ----------------------------------------------------------------------

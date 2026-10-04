@@ -17,7 +17,7 @@ MonitoredCounter ::MonitoredCounter(const char* const compName)
       m_count(0),
       m_errors(0),
       m_color(MonitorColor::GREEN),
-      m_monitoring(Fw::Enabled::ENABLED),
+      m_monitoring(Fw::Enabled::DISABLED),
       m_fault_reported(false),
       m_count_threshold(0),
       m_local_threshold(0),
