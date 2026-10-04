@@ -7,13 +7,14 @@
 #ifndef Svc_FaultProtection_RebootResponder_HPP
 #define Svc_FaultProtection_RebootResponder_HPP
 
+#include "Fw/Time/TimeInterval.hpp"
 #include "Svc/FaultProtection/RebootResponder/RebootResponderComponentAc.hpp"
 
 namespace Svc {
 
 namespace FaultProtection {
 
-class RebootResponder final : public RebootResponderComponentBase {
+class RebootResponder : public RebootResponderComponentBase {
   public:
     // ----------------------------------------------------------------------
     // Component construction and destruction
@@ -24,7 +25,15 @@ class RebootResponder final : public RebootResponderComponentBase {
     );
 
     //! Destroy RebootResponder object
-    ~RebootResponder();
+    virtual ~RebootResponder();
+
+    //! Configure the delay between announcing and performing the reboot (allows the announcement to downlink)
+    void configure(const Fw::TimeInterval& delay);
+
+  protected:
+    //! Perform the hard reboot. The default terminates the process immediately; override for platform resets.
+    //! If this returns, the step is reported as failed.
+    virtual void doReboot();
 
   private:
     // ----------------------------------------------------------------------
@@ -33,19 +42,24 @@ class RebootResponder final : public RebootResponderComponentBase {
 
     //! Handler implementation for faultResponseCancel
     //!
-    //! Cancel a running fault response step
+    //! Reboots are irrevocable: the request is refused
     void faultResponseCancel_handler(FwIndexType portNum  //!< The port number
                                      ) override;
 
     //! Handler implementation for faultResponseDispatch
     //!
-    //! Start a fault response step
-    void faultResponseDispatch_handler(
-        FwIndexType portNum,                    //!< The port number
-        const FaultConfig::Response& response,  //!< Active fault response
-        const FaultConfig::Step& step,          //!< Step of the active fault response
-        const FaultConfig::Context& context     //!< Context of the step of the active fault response
-        ) override;
+    //! Announces, delays, and performs the reboot
+    void faultResponseDispatch_handler(FwIndexType portNum,                    //!< The port number
+                                       const FaultConfig::Response& response,  //!< Active fault response
+                                       const FaultConfig::Step& step,          //!< Step of the active fault response
+                                       const FaultConfig::Context& context     //!< Context for the step
+                                       ) override;
+
+    // ----------------------------------------------------------------------
+    // Member variables
+    // ----------------------------------------------------------------------
+
+    Fw::TimeInterval m_delay;  //!< Delay between announcement and reboot
 };
 
 }  // namespace FaultProtection

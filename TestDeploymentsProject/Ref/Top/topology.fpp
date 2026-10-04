@@ -20,6 +20,7 @@ module Ref {
     instance ComCcsds.Subtopology
     instance FileHandling.Subtopology
     instance DataProducts.Subtopology
+    instance Svc.FaultProtection.Subtopology
     #instance DpCompression.Subtopology
 
     # ----------------------------------------------------------------------
@@ -46,6 +47,8 @@ module Ref {
     instance linuxTimer
     instance comDriver
     instance cmdSeq
+    instance fpSeq
+    instance monitoredCounter
 
     # ----------------------------------------------------------------------
     # Pattern graph specifiers
@@ -90,6 +93,8 @@ module Ref {
       rateGroup1Comp.RateGroupMemberOut[5] -> ComCcsds.Subtopology.comQueueRun
       rateGroup1Comp.RateGroupMemberOut[6] -> CdhCore.Subtopology.cmdDispRun
       rateGroup1Comp.RateGroupMemberOut[7] -> ComCcsds.Subtopology.aggregatorTimeout
+      rateGroup1Comp.RateGroupMemberOut[8] -> Svc.FaultProtection.Subtopology.faultManagerRun
+      rateGroup1Comp.RateGroupMemberOut[9] -> monitoredCounter.run
 
       # Rate group 2
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup2] -> rateGroup2Comp.CycleIn
@@ -100,6 +105,7 @@ module Ref {
       rateGroup2Comp.RateGroupMemberOut[4] -> dpDemo.run
       #connection to FileManager listing feature command for sequencing
       rateGroup2Comp.RateGroupMemberOut[5] -> FileHandling.Subtopology.fileManagerSchedIn
+      rateGroup2Comp.RateGroupMemberOut[6] -> fpSeq.schedIn
 
       # Rate group 3
       rateGroupDriverComp.CycleOut[Ports_RateGroups.rateGroup3] -> rateGroup3Comp.CycleIn
@@ -111,6 +117,7 @@ module Ref {
       rateGroup3Comp.RateGroupMemberOut[5] -> DataProducts.Subtopology.dpWriterSchedIn
       rateGroup3Comp.RateGroupMemberOut[6] -> DataProducts.Subtopology.dpMgrSchedIn
       rateGroup3Comp.RateGroupMemberOut[7] -> CdhCore.Subtopology.eventsRun
+      rateGroup3Comp.RateGroupMemberOut[8] -> CdhCore.fatalHandler.run
       #rateGroup3Comp.RateGroupMemberOut[8] -> DpCompression.Subtopology.dpZLibBufferManagerSchedIn
     }
 
@@ -126,6 +133,21 @@ module Ref {
       # ComStub <-> ComDriver (Downlink)
       ComCcsds.Subtopology.drvSendOut -> comDriver.$send
       comDriver.ready                 -> ComCcsds.Subtopology.drvConnected
+    }
+
+    connections FaultProtection {
+      # Fault reporters -> FaultManager
+      CdhCore.fatalHandler.faultOut -> Svc.FaultProtection.Subtopology.reportIn
+      monitoredCounter.faultOut     -> Svc.FaultProtection.Subtopology.reportIn
+
+      # SequenceResponder <-> dedicated fault response sequencer
+      Svc.FaultProtection.Subtopology.seqRunOut    -> fpSeq.seqRunIn
+      Svc.FaultProtection.Subtopology.seqCancelOut -> fpSeq.seqCancelIn
+      fpSeq.seqDone                                -> Svc.FaultProtection.Subtopology.seqDoneIn
+
+      # Fault response sequencer -> command dispatcher
+      fpSeq.comCmdOut                  -> CdhCore.Subtopology.seqCmdBuff
+      CdhCore.Subtopology.seqCmdStatus -> fpSeq.cmdResponseIn
     }
 
     connections Ref {

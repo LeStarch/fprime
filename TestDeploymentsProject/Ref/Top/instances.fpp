@@ -58,6 +58,18 @@ module Ref {
     stack size Default.STACK_SIZE \
     priority 20
 
+  @ Command sequencer dedicated to fault response sequences
+  instance fpSeq: Svc.CmdSequencer base id 0x10007000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 20
+
+  @ Fault protection demonstration: monitored counter
+  instance monitoredCounter: Ref.MonitoredCounter base id 0x10008000 \
+    queue size Default.QUEUE_SIZE \
+    stack size Default.STACK_SIZE \
+    priority 20
+
   instance dpDemo: Ref.DpDemo base id 0x0A10 \
     queue size Default.QUEUE_SIZE \
     stack size Default.STACK_SIZE \

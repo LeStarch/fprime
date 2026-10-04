@@ -27,7 +27,7 @@ module FaultProtection {
         precedence: U8 @< Precedence of fault where 255 is the highest, and 0 is the lowest
         response: FaultConfig.Response @< Response to take
         enabled: Fw.Enabled @< Is the response to this fault ENABLED/DISABLED
-    }
+    } default { enabled = Fw.Enabled.ENABLED }
 
     @* Definition of a fix-length array of steps
     @*

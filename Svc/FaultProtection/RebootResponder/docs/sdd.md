@@ -1,66 +1,34 @@
-# Svc::RebootResponder
+# Svc::FaultProtection::RebootResponder
 
-Reboot the FSW in response to a fault
+Reboots the flight software in response to a fault response step.
 
-## Usage Examples
-Add usage examples here
+## 1. Requirements
 
-### Diagrams
-Add diagrams here
+| ID                        | Description (shall)                                                                                                   | Verification |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------ |
+| SVC_REBOOTRESPONDER_001   | RebootResponder shall emit an event announcing the reboot when a step is dispatched to it.                             | Unit-Test    |
+| SVC_REBOOTRESPONDER_002   | RebootResponder shall delay a configurable interval before rebooting to allow the announcement to downlink.            | Unit-Test    |
+| SVC_REBOOTRESPONDER_003   | RebootResponder shall perform the reboot through an overridable hook defaulting to hard process termination.           | Unit-Test    |
+| SVC_REBOOTRESPONDER_004   | RebootResponder shall complete the step with failure if the reboot hook returns.                                        | Unit-Test    |
+| SVC_REBOOTRESPONDER_005   | RebootResponder shall refuse cancellation of a requested reboot.                                                        | Unit-Test    |
 
-### Typical Usage
-And the typical usage of the component here
+## 2. Design
 
-## Class Diagram
-Add a class diagram here
+`RebootResponder` is a `passive` component implementing the `SyncResponder` interface. On dispatch it emits
+`RebootRequested`, waits `m_delay`, and calls the `virtual doReboot()` hook. The default hook calls `_Exit` so the
+process supervisor restarts the software; platforms with a hardware reset override `doReboot()` in a derived class.
+A reboot never returns, so the step never completes; if the hook does return, the step completes with
+`Fw::Success::FAILURE` so the `FaultManager` can escalate per the step's failure mode.
 
-## Port Descriptions
-| Name | Description |
-|---|---|
-|---|---|
+Cancellation is refused (`RebootCancelRefused`): a reboot is irrevocable once requested.
 
-## Component States
-Add component states in the chart below
-| Name | Description |
-|---|---|
-|---|---|
+| Port                    | Kind         | Type                     | Description                      |
+| ----------------------- | ------------ | ------------------------ | -------------------------------- |
+| `faultResponseDispatch` | `sync input` | `FaultResponseDispatch`  | Step dispatch from FaultManager  |
+| `faultResponseCancel`   | `sync input` | `Fw.Signal`              | Step cancellation (refused)      |
+| `faultResponseComplete` | `output`     | `FaultResponseComplete`  | Step completion (failure only)   |
 
-## Sequence Diagrams
-Add sequence diagrams here
+## 3. Configuration
 
-## Parameters
-| Name | Description |
-|---|---|
-|---|---|
-
-## Commands
-| Name | Description |
-|---|---|
-|---|---|
-
-## Events
-| Name | Description |
-|---|---|
-|---|---|
-
-## Telemetry
-| Name | Description |
-|---|---|
-|---|---|
-
-## Unit Tests
-Add unit test descriptions in the chart below
-| Name | Description | Output | Coverage |
-|---|---|---|---|
-|---|---|---|---|
-
-## Requirements
-Add requirements in the chart below
-| Name | Description | Validation |
-|---|---|---|
-|---|---|---|
-
-## Change Log
-| Date | Description |
-|---|---|
-|---| Initial Draft |
+`configure(delay)` sets the downlink delay. The step mapped to the reboot (e.g. `REBOOT`) is configured in the
+project's `FaultConfig.StepDefinitionTable` with `dispatchPort = Port.REBOOT_RESPONDER_PORT`.

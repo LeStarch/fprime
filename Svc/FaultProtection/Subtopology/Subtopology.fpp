@@ -1,30 +1,30 @@
 module Svc {
 module FaultProtection {
-    @ Translates FATALs to fault reports
-    instance fatalToFault: FatalToFault base id FaultProtection.BASE_ID + 0x00001000
-
-    @ Handles fault responses via sequence
+    # ----------------------------------------------------------------------
+    # Passive Components
+    # ----------------------------------------------------------------------
     instance sequenceResponder: SequenceResponder base id FaultProtection.BASE_ID + 0x00002000
-
-    @ Handles fault responses via sequence
     instance rebootResponder: RebootResponder base id FaultProtection.BASE_ID + 0x00003000
 
-    @ Maps fault reports to fault responses
+    # ----------------------------------------------------------------------
+    # Active Components
+    # ----------------------------------------------------------------------
     instance faultManager: FaultManager base id FaultProtection.BASE_ID + 0x00004000 \
         queue size FaultProtection.QueueSizes.faultManager \
         stack size FaultProtection.StackSizes.faultManager \
         priority FaultProtection.Priorities.faultManager
 
-
+    @* Fault protection subtopology
+    @*
+    @* Wires the FaultManager to the framework responders. Fault reporters connect to the `reportIn` port. FATAL
+    @* translation is achieved by configuring CdhCore's `fatalHandler` instance as `Svc.FaultProtection.FatalToFault`
+    @* and connecting its `faultOut` to `reportIn`.
     topology Subtopology {
         instance faultManager
-        instance fatalToFault
         instance sequenceResponder
         instance rebootResponder
 
-        connections Faults {
-            fatalToFault.faultOut -> faultManager.reportIn
-
+        connections Responders {
             faultManager.stepDispatchOut[FaultConfig.Port.SEQUENCE_RESPONDER_PORT] -> sequenceResponder.faultResponseDispatch
             faultManager.stepDispatchOut[FaultConfig.Port.REBOOT_RESPONDER_PORT] -> rebootResponder.faultResponseDispatch
             faultManager.stepCancelOut[FaultConfig.Port.SEQUENCE_RESPONDER_PORT] -> sequenceResponder.faultResponseCancel
@@ -32,6 +32,25 @@ module FaultProtection {
             sequenceResponder.faultResponseComplete -> faultManager.stepCompletionIn
             rebootResponder.faultResponseComplete -> faultManager.stepCompletionIn
         }
+
+        # ----------------------------------------------------------------------
+        # Topology ports
+        # ----------------------------------------------------------------------
+
+        @ Input port for fault reports from any fault reporter
+        port reportIn = faultManager.reportIn
+
+        @ Input port for the rate group tick driving the FaultManager
+        port faultManagerRun = faultManager.run
+
+        @ Output port requesting a sequence run from the fault response sequencer
+        port seqRunOut = sequenceResponder.seqRunOut
+
+        @ Output port canceling the fault response sequencer
+        port seqCancelOut = sequenceResponder.seqCancelOut
+
+        @ Input port for fault response sequencer completion
+        port seqDoneIn = sequenceResponder.seqDoneIn
     }
 } # FaultProtection
-} # Svb
+} # Svc

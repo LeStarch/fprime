@@ -18,6 +18,11 @@
 // Allows easy reference to objects in FPP/autocoder required namespaces
 using namespace Ref;
 
+// Directory holding fault response sequences (<directory>/<step name>.seq)
+static const char* const FAULT_SEQUENCE_DIRECTORY = "/tmp/uplink";
+// Rate group 3 ticks (4 s each) between a FATAL and the abort fallback
+static const FwSizeType FATAL_FALLBACK_TICKS = 5;
+
 // Instantiate a malloc allocator for cmdSeq buffer allocation
 Fw::MallocAllocator mallocator;
 
@@ -53,6 +58,12 @@ void configureTopology() {
 
     // Command sequencer needs to allocate memory to hold contents of command sequences
     cmdSeq.allocateBuffer(0, mallocator, 5 * 1024);
+    fpSeq.allocateBuffer(0, mallocator, 5 * 1024);
+
+    // Fault protection: response sequences live in the uplink sandbox such that they may be uplinked, and a FATAL
+    // falls back to abort when the fault response has not rebooted within the configured ticks
+    Svc::FaultProtection::sequenceResponder.configure(FAULT_SEQUENCE_DIRECTORY);
+    CdhCore::fatalHandler.configure(FATAL_FALLBACK_TICKS);
 
     // Restrict uplinked files to a sandbox directory to prevent path-traversal writes
     FileHandling::fileUplink.configure("/tmp/uplink/");
@@ -110,6 +121,7 @@ void teardownTopology(const TopologyState& state) {
 
     // Resource deallocation
     cmdSeq.deallocateBuffer(mallocator);
+    fpSeq.deallocateBuffer(mallocator);
     tearDownComponents(state);
     deinitComponents(state);
 }

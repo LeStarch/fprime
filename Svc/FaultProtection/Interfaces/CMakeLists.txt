@@ -4,5 +4,4 @@ register_fprime_library(
     DEPENDS
         Fw_Types
         Svc_FaultProtection_FaultConfig
-    INTERFACE
 )

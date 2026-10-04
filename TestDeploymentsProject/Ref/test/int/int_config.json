@@ -11,5 +11,9 @@
     "Svc.DpCatalog": "DataProducts.dpCat",
     "Svc.DpManager": "DataProducts.dpMgr",
     "Svc.DpWriter": "DataProducts.dpWriter",
-    "Svc.Health": "CdhCore.health"
+    "Svc.Health": "CdhCore.health",
+    "Svc.FaultProtection.FaultManager": "Svc.FaultProtection.faultManager",
+    "Svc.FaultProtection.SequenceResponder": "Svc.FaultProtection.sequenceResponder",
+    "Ref.MonitoredCounter": "Ref.monitoredCounter",
+    "Ref.FaultSequencer": "Ref.fpSeq"
 }

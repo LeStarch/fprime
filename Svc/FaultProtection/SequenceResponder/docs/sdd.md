@@ -1,66 +1,40 @@
-# Svc::SequenceResponder
+# Svc::FaultProtection::SequenceResponder
 
-Responds to faults via sequence
+Responds to a fault response step by running a command sequence.
 
-## Usage Examples
-Add usage examples here
+## 1. Requirements
 
-### Diagrams
-Add diagrams here
+| ID                          | Description (shall)                                                                                                       | Verification |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| SVC_SEQUENCERESPONDER_001   | SequenceResponder shall request the sequence `<directory>/<step name>.seq` from the sequencer when a step is dispatched.  | Unit-Test    |
+| SVC_SEQUENCERESPONDER_002   | SequenceResponder shall complete the step with success when the sequence completes with `OK` and failure otherwise.       | Unit-Test    |
+| SVC_SEQUENCERESPONDER_003   | SequenceResponder shall run at most one sequence at a time, completing a dispatch received while busy with failure.       | Unit-Test    |
+| SVC_SEQUENCERESPONDER_004   | SequenceResponder shall cancel the running sequence on a cancel request and shall not complete the cancelled step.        | Unit-Test    |
+| SVC_SEQUENCERESPONDER_005   | SequenceResponder shall complete the step with failure when the sequencer port is unconnected.                            | Unit-Test    |
+| SVC_SEQUENCERESPONDER_006   | SequenceResponder shall log and ignore sequence completions received with no step in progress.                             | Unit-Test    |
 
-### Typical Usage
-And the typical usage of the component here
+## 2. Design
 
-## Class Diagram
-Add a class diagram here
+`SequenceResponder` is a `passive` component implementing the `SyncResponder` interface. A dispatched step is
+translated into a sequence run request on `seqRunOut` (`Svc.CmdSeqIn`) for the file `<directory>/<step name>.seq`.
+The sequencer's completion arrives on `seqDoneIn` (`Fw.CmdResponse`) and is forwarded to the `FaultManager` as the
+step completion. A cancel request forwards to `seqCancelOut` (`Svc.CmdSeqCancel`) and clears the active step first
+so the sequencer's subsequent completion is reported as `UnexpectedSequenceDone` rather than as a step result.
 
-## Port Descriptions
-| Name | Description |
-|---|---|
-|---|---|
+The active step is protected by a mutex since dispatch, cancel, and completion arrive on different threads.
 
-## Component States
-Add component states in the chart below
-| Name | Description |
-|---|---|
-|---|---|
+| Port                    | Kind         | Type                     | Description                             |
+| ----------------------- | ------------ | ------------------------ | --------------------------------------- |
+| `faultResponseDispatch` | `sync input` | `FaultResponseDispatch`  | Step dispatch from FaultManager         |
+| `faultResponseCancel`   | `sync input` | `Fw.Signal`              | Step cancellation                       |
+| `faultResponseComplete` | `output`     | `FaultResponseComplete`  | Step completion                         |
+| `seqRunOut`             | `output`     | `Svc.CmdSeqIn`           | Sequence run request                    |
+| `seqCancelOut`          | `output`     | `Svc.CmdSeqCancel`       | Sequence cancel request                 |
+| `seqDoneIn`             | `sync input` | `Fw.CmdResponse`         | Sequence completion from the sequencer  |
 
-## Sequence Diagrams
-Add sequence diagrams here
+## 3. Configuration
 
-## Parameters
-| Name | Description |
-|---|---|
-|---|---|
-
-## Commands
-| Name | Description |
-|---|---|
-|---|---|
-
-## Events
-| Name | Description |
-|---|---|
-|---|---|
-
-## Telemetry
-| Name | Description |
-|---|---|
-|---|---|
-
-## Unit Tests
-Add unit test descriptions in the chart below
-| Name | Description | Output | Coverage |
-|---|---|---|---|
-|---|---|---|---|
-
-## Requirements
-Add requirements in the chart below
-| Name | Description | Validation |
-|---|---|---|
-|---|---|---|
-
-## Change Log
-| Date | Description |
-|---|---|
-|---| Initial Draft |
+`configure(directory)` sets the sequence directory. Sequences are compiled with `fprime-seqgen` against the
+deployment dictionary and placed at `<directory>/<step name>.seq`. Deployments should dedicate a sequencer (e.g. a
+second `Svc.CmdSequencer`) to fault responses so that ground sequences cannot block a response; see the Ref
+deployment's `fpSeq`.

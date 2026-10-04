@@ -21,6 +21,7 @@
 #include "Svc/Subtopologies/FileHandling/PingEntries.hpp"
 
 // SubtopologyTopologyDefs includes
+#include "Svc/FaultProtection/Subtopology/SubtopologyTopologyDefs.hpp"
 #include "Svc/Subtopologies/CdhCore/SubtopologyTopologyDefs.hpp"
 #include "Svc/Subtopologies/ComCcsds/SubtopologyTopologyDefs.hpp"
 #include "Svc/Subtopologies/DataProducts/SubtopologyTopologyDefs.hpp"
@@ -65,6 +66,9 @@ enum { WARN = 3, FATAL = 5 };
 namespace Ref_cmdSeq {
 enum { WARN = 3, FATAL = 5 };
 }
+namespace Ref_fpSeq {
+enum { WARN = 3, FATAL = 5 };
+}
 }  // namespace PingEntries
 
 // Definitions are placed within a namespace named after the deployment
@@ -79,12 +83,13 @@ namespace Ref {
  * fields, which are derived by command line inputs.
  */
 struct TopologyState {
-    const char* hostname;                         //!< Hostname for TCP communication
-    U16 port;                                     //!< Port for TCP communication
-    CdhCore::SubtopologyState cdhCore;            //!< Subtopology state for CdhCore
-    ComCcsds::SubtopologyState comCcsds;          //!< Subtopology state for ComCcsds
-    DataProducts::SubtopologyState dataProducts;  //!< Subtopology state for DataProducts
-    FileHandling::SubtopologyState fileHandling;  //!< Subtopology state for FileHandling
+    const char* hostname;                                    //!< Hostname for TCP communication
+    U16 port;                                                //!< Port for TCP communication
+    CdhCore::SubtopologyState cdhCore;                       //!< Subtopology state for CdhCore
+    ComCcsds::SubtopologyState comCcsds;                     //!< Subtopology state for ComCcsds
+    DataProducts::SubtopologyState dataProducts;             //!< Subtopology state for DataProducts
+    FileHandling::SubtopologyState fileHandling;             //!< Subtopology state for FileHandling
+    Svc::FaultProtection::SubtopologyState faultProtection;  //!< Subtopology state for FaultProtection
     // DpCompression::SubtopologyState dpCompression;//!< Subtopology state for DpCompression
 };
 

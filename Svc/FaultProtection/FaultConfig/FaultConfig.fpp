@@ -12,6 +12,12 @@ module FaultConfig {
     @ Number of steps defined for each response. Remember, extra steps must be filled with SKIP.
     constant FAULT_RESPONSE_STEP_COUNT = 3
 
+    @* Number of FaultManager `run` ticks to wait after a fault report before starting the response
+    @*
+    @* This delay allows additional (possibly higher-precedence) fault reports to accumulate such that the response
+    @* to the highest-precedence fault is selected. A value of 0 responds on the tick following the report.
+    constant RESPONSE_COUNTDOWN_TICKS = 2
+
     @* Fault ID enumeration
     @*
     @* An enumeration of possible faults in the system. Projects shall add a unique enumerated fault value for each
@@ -77,8 +83,8 @@ module FaultConfig {
     @*
     @* Entries in the table are the initial configuration.  Entries can be updated via a command to FaultManager.
     constant FaultResponseTable = [
-        { fault = Fault.FATAL_OCCURRED,         precedence = 10, response = Response.REBOOT_RESPONSE },
-        { fault = Fault.FAULT_RESPONSE_FAILURE, precedence = 20, response = Response.REBOOT_RESPONSE }
+        { fault = Fault.FATAL_OCCURRED,         precedence = 10, response = Response.REBOOT_RESPONSE, enabled = Fw.Enabled.ENABLED },
+        { fault = Fault.FAULT_RESPONSE_FAILURE, precedence = 20, response = Response.REBOOT_RESPONSE, enabled = Fw.Enabled.ENABLED }
     ]
     
     @* Response definition table
