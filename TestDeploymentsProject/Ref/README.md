@@ -84,6 +84,10 @@ abort fallback after 20 s. See
 [`MonitoredCounter/docs/sdd.md`](MonitoredCounter/docs/sdd.md) for the sequence compilation steps and
 `test/int/test_fault_protection.py` for the automated flow.
 
+A completing response bursts about two dozen events within a tick from several threads, so the Ref raises
+`CdhCoreConfig.QueueSizes.events` to 50 (`Config/CdhCoreConfig.fpp`); with the framework default of 10 the
+`CdhCore.events` component dropped some of them (`EventsDropped`).
+
 ## Quick Tips
 
 - The F´ GDS defaults to port 50000. More information can be found with `fprime-gds --help`
