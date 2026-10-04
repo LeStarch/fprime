@@ -1,0 +1,2 @@
+; Fault response step RESET_COUNT_SEQUENCE: correct the COUNTER_HIGH fault by resetting the monitored counter
+R00:00:00 Ref.monitoredCounter.RESET_COUNT

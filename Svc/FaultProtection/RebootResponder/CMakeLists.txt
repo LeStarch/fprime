@@ -19,18 +19,18 @@ register_fprime_library(
         "${CMAKE_CURRENT_LIST_DIR}/RebootResponder.fpp"
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/RebootResponder.cpp"
-#   DEPENDS
-#       MyPackage_MyOtherModule
+    DEPENDS
+        Fw_Logger
 )
 
 ### Unit Tests ###
-# register_fprime_ut(
-#     AUTOCODER_INPUTS
-#         "${CMAKE_CURRENT_LIST_DIR}/RebootResponder.fpp"
-#     SOURCES
-#         "${CMAKE_CURRENT_LIST_DIR}/test/ut/RebootResponderTestMain.cpp"
-#         "${CMAKE_CURRENT_LIST_DIR}/test/ut/RebootResponderTester.cpp"
-#     DEPENDS
-#         STest # For rules-based testing
-#     UT_AUTO_HELPERS
-# )
+register_fprime_ut(
+    AUTOCODER_INPUTS
+        "${CMAKE_CURRENT_LIST_DIR}/RebootResponder.fpp"
+    SOURCES
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/RebootResponderTestMain.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/RebootResponderTester.cpp"
+    DEPENDS
+        STest # For rules-based testing
+    UT_AUTO_HELPERS
+)

@@ -6,7 +6,8 @@ module FaultProtection {
 @* Use this interface on any component that needs to report a fault to FaultManager. It consists of the single output
 @* port `faultOut` used to report the fault.
 @*
-@* Components using this interface can connect to FaultManager using: fault connections instance <instance name>.
+@* Deployments connect `faultOut` to `Svc.FaultProtection.Subtopology.reportIn` (or `faultManager.reportIn`) in the
+@* topology; there is no pattern graph specifier for fault reports.
 interface Reporter {
     @ Report a fault to FaultManager
     output port faultOut: Svc.FaultProtection.FaultReport
@@ -31,20 +32,21 @@ interface AsyncResponder {
 
 @* Responder to a fault (synchronous)
 @*
-@* Use this interface on any component that performs a fault response step asynchronously. It consists of an sync
-@* input port `faultResponseDispatch` used to accept the fault response step dispatch, an output port
-@* `faultResponseComplete` used to respond after completing a fault response, and sync input port `faultResponseCancel`
-@* used to implement the synchronous canceling of a fault response step.
+@* Use this interface on any component that performs a fault response step synchronously on the caller's thread. It
+@* consists of a guarded input port `faultResponseDispatch` used to accept the fault response step dispatch, an output
+@* port `faultResponseComplete` used to respond after completing a fault response, and guarded input port
+@* `faultResponseCancel` used to implement the canceling of a fault response step. The ports are guarded so that the
+@* responder's state is protected against concurrent dispatch, cancel, and completion from other threads.
 @*
 @* [!CAUTION]
 @* This interface was intended for the case when the user needs to use internal queuing, pass-through delegation, and
 @* other tasks that rely on another component's queue. It SHALL NOT block the calling queue.
 interface SyncResponder {
     @ Start a fault response step
-    sync input port faultResponseDispatch: FaultResponseDispatch
+    guarded input port faultResponseDispatch: FaultResponseDispatch
 
     @ Cancel a running fault response step
-    sync input port faultResponseCancel: Fw.Signal
+    guarded input port faultResponseCancel: Fw.Signal
 
     @ Send fault response step completion
     output port faultResponseComplete: FaultResponseComplete
@@ -62,13 +64,11 @@ interface SyncResponder {
 @*      +-----------------------+
 @*      |     Precondition      |
 @*      +-----------+-----------+
-@*                  / \
 @*         false   /   \   true
 @*                v     v
 @*      +---------+     +-----------------+
 @*      |  BLACK  |     |       Test      |
 @*      +----+----+     +---------+-------+
-@*           |                    /        \
 @*           v            false  /          \  true
 @*      +---------+             v            v
 @*      |   END   |   +-------------------+   +--------------------+
@@ -80,13 +80,12 @@ interface SyncResponder {
 @*                         +---------+       +------------------------+
 @*                         |   END   |       | Check system threshold |
 @*                         +---------+       +-----------+------------+
-@*                                                      /  \
 @*                                              true   /    \  false
 @*                                                    v      v
 @*                                      +----------------+   +-----------------------+
 @*                                      |  RED + system  |   | Check local threshold |
 @*                                      |   response     |   +-----------+-----------+
-@*                                      +--------+-------+             /        \
+@*                                      +--------+-------+
 @*                                               |             true   /          \  false
 @*                                               v                   v            v
 @*                                          +---------+    +-------------------+  +---------+

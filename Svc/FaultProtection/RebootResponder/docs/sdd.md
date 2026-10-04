@@ -1,66 +1,39 @@
-# Svc::RebootResponder
+# Svc::FaultProtection::RebootResponder
 
-Reboot the FSW in response to a fault
+Reboots the flight software in response to a fault response step.
 
-## Usage Examples
-Add usage examples here
+## 1. Requirements
 
-### Diagrams
-Add diagrams here
+| ID                        | Description (shall)                                                                                                   | Verification |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------ |
+| SVC_REBOOTRESPONDER_001   | RebootResponder shall emit an event announcing the reboot when a step is dispatched to it.                             | Unit-Test    |
+| SVC_REBOOTRESPONDER_002   | RebootResponder shall reboot a configurable number of `run` ticks after the request to allow the announcement to downlink. | Unit-Test    |
+| SVC_REBOOTRESPONDER_003   | RebootResponder shall perform the reboot through an overridable hook defaulting to hard process termination.           | Unit-Test    |
+| SVC_REBOOTRESPONDER_004   | RebootResponder shall complete the step with failure if the reboot hook returns.                                        | Unit-Test    |
+| SVC_REBOOTRESPONDER_005   | RebootResponder shall refuse cancellation of a requested reboot.                                                        | Unit-Test    |
+| SVC_REBOOTRESPONDER_006   | RebootResponder shall not block the dispatching thread.                                                                | Unit-Test    |
 
-### Typical Usage
-And the typical usage of the component here
+## 2. Design
 
-## Class Diagram
-Add a class diagram here
+`RebootResponder` is a `passive` component implementing the `SyncResponder` interface. On dispatch it emits
+`RebootRequested`, records the pending request, and returns immediately so that the `FaultManager` queue is not
+blocked. Each `run` tick advances the pending request; after `m_delay_ticks` ticks the `virtual doReboot()` hook is
+called. The default hook calls `_Exit` so the process supervisor restarts the software; platforms with a hardware
+reset override `doReboot()` in a derived class. A reboot never returns, so the step never completes; if the hook
+does return, the step completes with `Fw::Success::FAILURE` so the `FaultManager` can escalate per the step's
+failure mode. A second dispatch while a request is pending is announced but does not restart the delay.
 
-## Port Descriptions
-| Name | Description |
-|---|---|
-|---|---|
+Cancellation is refused (`RebootCancelRefused`): a reboot is irrevocable once requested.
 
-## Component States
-Add component states in the chart below
-| Name | Description |
-|---|---|
-|---|---|
+| Port                    | Kind            | Type                     | Description                      |
+| ----------------------- | --------------- | ------------------------ | -------------------------------- |
+| `faultResponseDispatch` | `guarded input` | `FaultResponseDispatch`  | Step dispatch from FaultManager  |
+| `faultResponseCancel`   | `guarded input` | `Fw.Signal`              | Step cancellation (refused)      |
+| `run`                   | `guarded input` | `Svc.Sched`              | Rate group tick driving the delay |
+| `faultResponseComplete` | `output`        | `FaultResponseComplete`  | Step completion (failure only)   |
 
-## Sequence Diagrams
-Add sequence diagrams here
+## 3. Configuration
 
-## Parameters
-| Name | Description |
-|---|---|
-|---|---|
-
-## Commands
-| Name | Description |
-|---|---|
-|---|---|
-
-## Events
-| Name | Description |
-|---|---|
-|---|---|
-
-## Telemetry
-| Name | Description |
-|---|---|
-|---|---|
-
-## Unit Tests
-Add unit test descriptions in the chart below
-| Name | Description | Output | Coverage |
-|---|---|---|---|
-|---|---|---|---|
-
-## Requirements
-Add requirements in the chart below
-| Name | Description | Validation |
-|---|---|---|
-|---|---|---|
-
-## Change Log
-| Date | Description |
-|---|---|
-|---| Initial Draft |
+`configure(delayTicks)` sets the number of `run` ticks between the request and the reboot. The step mapped to the
+reboot (e.g. `REBOOT`) is configured in the project's `FaultConfig.StepDefinitionTable` with
+`dispatchPort = Port.REBOOT_RESPONDER_PORT`; `run` must be connected to a rate group for the reboot to occur.

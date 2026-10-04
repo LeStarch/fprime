@@ -18,5 +18,6 @@ register_fprime_module(
   DEPENDS
     Fw_Logger
     Svc_PosixTime
+    Svc_FaultProtection_Subtopology
     Svc_TlmPacketizer_config_TlmPacketizerConfig # Supports packet autocoding w/o TlmPacketizer  
 )

@@ -13,10 +13,25 @@
 #include <Ref/Top/RefTopologyAc.hpp>
 
 // Necessary project-specified types
+#include <Fw/Time/TimeInterval.hpp>
+#include <Fw/Types/FileNameString.hpp>
 #include <Fw/Types/MallocAllocator.hpp>
 
 // Allows easy reference to objects in FPP/autocoder required namespaces
 using namespace Ref;
+
+// Size of the buffer each command sequencer loads sequences into
+static constexpr FwSizeType SEQUENCER_BUFFER_SIZE = 5 * 1024;
+// Directory holding fault response sequences (<directory>/<step name>.seq); separate from the uplink sandbox so that
+// uplinked files cannot replace a fault response. A flight deployment uses a directory only it can write; this demo
+// path is world-shared, like the Ref's other /tmp paths.
+// Kept short: CmdSequencer bounds "<directory>/<step>.seq" to FW_CMD_STRING_MAX_SIZE (40) characters
+static const char* const FAULT_SEQUENCE_DIRECTORY = "/tmp/fp-seq";
+// Interval the asserting thread is parked after a FATAL before the abort fallback; covers the response countdown
+// (2 s), the reboot delay (one 0.5 Hz tick), and downlink of the announcement
+static const Fw::TimeInterval FATAL_FALLBACK_DELAY(20, 0);
+// Rate group 2 ticks (2 s each) between the reboot announcement and the reboot, allowing the announcement to downlink
+static constexpr FwSizeType REBOOT_DELAY_TICKS = 1;
 
 // Instantiate a malloc allocator for cmdSeq buffer allocation
 Fw::MallocAllocator mallocator;
@@ -52,7 +67,14 @@ void configureTopology() {
     rateGroup3Comp.configure(rateGroup3Context);
 
     // Command sequencer needs to allocate memory to hold contents of command sequences
-    cmdSeq.allocateBuffer(0, mallocator, 5 * 1024);
+    cmdSeq.allocateBuffer(0, mallocator, SEQUENCER_BUFFER_SIZE);
+    fpSeq.allocateBuffer(0, mallocator, SEQUENCER_BUFFER_SIZE);
+
+    // Fault protection: where response sequences are read from, how long a reboot waits for its announcement to
+    // downlink, and how long a FATAL waits for the fault response before falling back to abort
+    Svc::FaultProtection::sequenceResponder.configure(Fw::FileNameString(FAULT_SEQUENCE_DIRECTORY));
+    Svc::FaultProtection::rebootResponder.configure(REBOOT_DELAY_TICKS);
+    CdhCore::fatalHandler.configure(FATAL_FALLBACK_DELAY);
 
     // Restrict uplinked files to a sandbox directory to prevent path-traversal writes
     FileHandling::fileUplink.configure("/tmp/uplink/");
@@ -110,6 +132,7 @@ void teardownTopology(const TopologyState& state) {
 
     // Resource deallocation
     cmdSeq.deallocateBuffer(mallocator);
+    fpSeq.deallocateBuffer(mallocator);
     tearDownComponents(state);
     deinitComponents(state);
 }

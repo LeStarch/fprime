@@ -45,6 +45,21 @@ telemetry packets RefPackets {
     rateGroup3Comp.RgCycleSlips
   }
 
+  packet FaultProtection id 40 group 1 {
+    Svc.FaultProtection.faultManager.FaultsReported
+    Svc.FaultProtection.faultManager.FaultsIgnored
+    Svc.FaultProtection.faultManager.ResponsesCompleted
+    Svc.FaultProtection.faultManager.ResponsesFailed
+    monitoredCounter.Count
+    monitoredCounter.ErrorCount
+    monitoredCounter.Monitor
+    fpSeq.CS_LoadCommands
+    fpSeq.CS_CancelCommands
+    fpSeq.CS_CommandsExecuted
+    fpSeq.CS_SequencesCompleted
+    fpSeq.CS_Errors
+  }
+
   packet DriveTlm id 3 group 1 {
     pingRcvr.PR_NumPings
     sendBuffComp.PacketsSent
@@ -289,4 +304,5 @@ telemetry packets RefPackets {
 } omit {
   CdhCore.cmdDisp.CommandErrors
   cmdSeq.CS_CurrentSequence
+  fpSeq.CS_CurrentSequence
 }

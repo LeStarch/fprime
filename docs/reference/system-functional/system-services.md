@@ -42,6 +42,12 @@ The Fatal Handler component receives fatal event announcements and performs the 
 
 The fatal handling path is: assertion or fatal event → Event Manager fatal announcement → Fatal Handler.
 
+Deployments using the fault protection services (`Svc/FaultProtection`) may substitute
+`Svc.FaultProtection.FatalToFault` for the Fatal Handler. It reports the FATAL as the `FATAL_OCCURRED` fault so
+that the `FaultManager`'s configured response (typically a reboot through `RebootResponder`) handles it after the
+FATAL event has been downlinked, parking the asserting thread and falling back to an abort if the response does
+not end the software within a configured delay.
+
 ### Polymorphic Database
 
 The Polymorphic Database (PolyDb) provides a general-purpose in-memory store for named values of varying types. Components can write values to the database and other components can read them. Values are stored using a polymorphic type that can hold any primitive type. This is useful for sharing computed values, calibration data, or algorithm state between components without requiring dedicated ports for each value.

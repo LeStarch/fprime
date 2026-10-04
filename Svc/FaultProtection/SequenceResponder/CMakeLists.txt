@@ -19,18 +19,19 @@ register_fprime_library(
         "${CMAKE_CURRENT_LIST_DIR}/SequenceResponder.fpp"
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/SequenceResponder.cpp"
-#   DEPENDS
-#       MyPackage_MyOtherModule
+    DEPENDS
+        Svc_Seq
+        Fw_Cmd
 )
 
 ### Unit Tests ###
-# register_fprime_ut(
-#     AUTOCODER_INPUTS
-#         "${CMAKE_CURRENT_LIST_DIR}/SequenceResponder.fpp"
-#     SOURCES
-#         "${CMAKE_CURRENT_LIST_DIR}/test/ut/SequenceResponderTestMain.cpp"
-#         "${CMAKE_CURRENT_LIST_DIR}/test/ut/SequenceResponderTester.cpp"
-#     DEPENDS
-#         STest # For rules-based testing
-#     UT_AUTO_HELPERS
-# )
+register_fprime_ut(
+    AUTOCODER_INPUTS
+        "${CMAKE_CURRENT_LIST_DIR}/SequenceResponder.fpp"
+    SOURCES
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/SequenceResponderTestMain.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/SequenceResponderTester.cpp"
+    DEPENDS
+        STest # For rules-based testing
+    UT_AUTO_HELPERS
+)

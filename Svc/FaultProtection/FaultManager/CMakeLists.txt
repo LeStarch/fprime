@@ -19,19 +19,21 @@ register_fprime_library(
         "${CMAKE_CURRENT_LIST_DIR}/FaultManager.fpp"
     SOURCES
         "${CMAKE_CURRENT_LIST_DIR}/FaultManager.cpp"
-   DEPENDS
+    DEPENDS
         Svc_FaultProtection_FaultConfig
         Svc_FaultProtection_Types
+        Svc_Sched
+        Fw_Logger
 )
 
 ### Unit Tests ###
-# register_fprime_ut(
-#     AUTOCODER_INPUTS
-#         "${CMAKE_CURRENT_LIST_DIR}/FaultManager.fpp"
-#     SOURCES
-#         "${CMAKE_CURRENT_LIST_DIR}/test/ut/FaultManagerTestMain.cpp"
-#         "${CMAKE_CURRENT_LIST_DIR}/test/ut/FaultManagerTester.cpp"
-#     DEPENDS
-#         STest # For rules-based testing
-#     UT_AUTO_HELPERS
-# )
+register_fprime_ut(
+    AUTOCODER_INPUTS
+        "${CMAKE_CURRENT_LIST_DIR}/FaultManager.fpp"
+    SOURCES
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/FaultManagerTestMain.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/test/ut/FaultManagerTester.cpp"
+    DEPENDS
+        STest # For rules-based testing
+    UT_AUTO_HELPERS
+)
