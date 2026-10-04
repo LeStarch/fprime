@@ -23,7 +23,7 @@ Translates incoming fault reports into a series of fault response step dispatche
 | SVC_FAULTMANAGER_015 | FaultManager shall skip every step of a disabled response, emitting an event per skipped step, and complete the response.                                  | Unit-Test    |
 | SVC_FAULTMANAGER_016 | FaultManager shall preempt an active response when a fault of higher precedence than the fault under response is reported, cancelling the active step.    | Unit-Test    |
 | SVC_FAULTMANAGER_017 | FaultManager shall not report `FAULT_RESPONSE_FAILURE` in response to a failure of the `FAULT_RESPONSE_FAILURE` response itself.                            | Unit-Test    |
-| SVC_FAULTMANAGER_018 | FaultManager shall not assert (FATAL) on any port or command input: all inputs are validated and overflow is handled by dropping.                           | Unit-Test    |
+| SVC_FAULTMANAGER_018 | FaultManager shall not assert (FATAL) on any port or command input: all inputs are validated and overflow of the asynchronous inputs is handled by dropping (see Queue sizing). | Unit-Test    |
 | SVC_FAULTMANAGER_019 | FaultManager shall report telemetry counting faults reported, faults ignored, responses completed, and responses failed.                                   | Unit-Test    |
 
 ## 2. Design
@@ -65,6 +65,15 @@ report on the component's thread (`FaultReported`/`FaultIgnored`/`FaultDisabled`
 dropped when the queue is full. Every tick therefore re-evaluates the latches themselves (`auditLatches`): the report
 of a disabled fault is discarded and a latched fault that outranks the fault under response preempts it, so a dropped
 message costs at most one diagnostic and one tick of preemption latency; the report is never lost.
+**Queue sizing.** Every asynchronous input (`run`, `stepCompletionIn`, the three commands, the internal
+`handleReport`/`handleInvalidReport`) is declared `drop`, so producers can fill the queue but never assert. The state
+machine signals (`Tick`, `Preempt`, `Step*`) are sent by the component's own thread and FPP offers no drop option for
+them: the generated `sendSignalFinish` asserts if the queue is full at that moment. The thread has just freed one
+slot when it sends a signal, so this requires producers to refill the queue faster than the component drains it
+(sustained overload). Size the queue for the worst-case burst of external messages plus one slot per signal
+(`FaultProtection.QueueSizes.faultManager`, 10 in the subtopology configuration) and keep reporters bounded; a
+droppable signal (or a reserved slot) is an FPP/framework enhancement, tracked under Future Work.
+
 4. A failed step is handled per its `FailureMode`: `IGNORE` continues; `DEFER` continues and fails the response at
    its end; `FAULT` fails the response immediately. A failed response reports `FAULT_RESPONSE_FAILURE` internally,
    unless the failed response was itself the response to `FAULT_RESPONSE_FAILURE`.
